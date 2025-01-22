@@ -2,10 +2,18 @@ name: Pointed
 version: '${project.version}'
 main: dev.felnull.pointed.Pointed
 api-version: '1.16'
+depend:
+  - BetterGUI
 commands:
   pointed:
     permission: pointed.command.admin
     aliases: [ptd]
+  ptreward:
+    permission: pointed.command.player
+    aliases: [ptr]
+  mypoint:
+    permission: pointed.command.player
+    aliases: [myp]
 permissions:
   pointed.command.admin:
     default: op

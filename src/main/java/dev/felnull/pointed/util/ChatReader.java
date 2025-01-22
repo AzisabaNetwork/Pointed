@@ -44,37 +44,46 @@ public class ChatReader {
             //ChatContentTypeがDisplay_Nameの場合の処理
             case DISPLAY_NAME:
                 rewardData.displayName = componentToString(msg);
-                gui.openPage(new RewardSettingsGUI(gui));
+                gui.openPage(new RewardSettingsGUI(gui, rewardData));
                 break;
             case REWARD_ID:
-                int id = Integer.parseInt(componentToString(msg).replaceAll("[^0-9]", ""));
+                Integer id = PointedUtilities.formStringToInt(msg, p);
+                if(id == null){
+                    break;
+                }
                 if(id >= 6*9 || id < 0){
                     p.sendMessage("IDは0以上54未満で設定してください(インベントリの場所に対応した値です)");
-                    gui.openPage(new RewardSettingsGUI(gui));
+                    gui.openPage(new RewardSettingsGUI(gui, rewardData));
                     break;
                 }
                 rewardData.rewardID = id;
-                gui.openPage(new RewardSettingsGUI(gui));
+                gui.openPage(new RewardSettingsGUI(gui, rewardData));
                 break;
             case NEED_POINT:
-                int np = Integer.parseInt(componentToString(msg).replaceAll("[^0-9]", ""));
+                Integer np = PointedUtilities.formStringToInt(msg, p);
+                if(np == null){
+                    break;
+                }
                 if(np < 0){
                     p.sendMessage("必要ポイント数は0以上の値で設定してください");
-                    gui.openPage(new RewardSettingsGUI(gui));
+                    gui.openPage(new RewardSettingsGUI(gui, rewardData));
                     break;
                 }
                 rewardData.needPoint = np;
-                gui.openPage(new RewardSettingsGUI(gui));
+                gui.openPage(new RewardSettingsGUI(gui, rewardData));
                 break;
             case NEED_MIN_POINT:
-                int nmp = Integer.parseInt(componentToString(msg).replaceAll("[^0-9]", ""));
+                Integer nmp = PointedUtilities.formStringToInt(msg, p);
+                if(nmp == null){
+                    break;
+                }
                 if(nmp < 0){
                     p.sendMessage("最低必要ポイント数は0以上の値で設定してください");
-                    gui.openPage(new RewardSettingsGUI(gui));
+                    gui.openPage(new RewardSettingsGUI(gui, rewardData));
                     break;
                 }
                 rewardData.needMinPoint = nmp;
-                gui.openPage(new RewardSettingsGUI(gui));
+                gui.openPage(new RewardSettingsGUI(gui, rewardData));
                 break;
         }
 

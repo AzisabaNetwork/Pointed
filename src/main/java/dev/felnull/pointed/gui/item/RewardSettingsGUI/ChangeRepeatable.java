@@ -9,8 +9,10 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,11 +23,14 @@ public class ChangeRepeatable extends GUIItem {
     public ChangeRepeatable(InventoryGUI gui, RewardData rewardData) {
         super(gui, new ItemStack(Material.ANVIL));
         setDisplayName(ChatColor.translateAlternateColorCodes('&', "&6繰り返し受け取りが可能か"));
-        if(rewardData.displayName != null){
-            List<Component> lore = new ArrayList<>();
-            lore.add(Component.text("[現在設定されている値]:").color(NamedTextColor.GRAY).append(Component.text(rewardData.repeatable)));
-            setLore(lore);
+        ItemMeta meta = itemStack.getItemMeta();
+        if(rewardData.repeatable){
+            meta.addEnchant(Enchantment.DURABILITY, 1, true);
+        }else {
+            meta.removeEnchant(Enchantment.DURABILITY);
         }
+        itemStack.setItemMeta(meta);
+
         this.rewardData = rewardData;
     }
 

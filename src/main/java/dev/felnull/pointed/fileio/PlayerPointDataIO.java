@@ -8,18 +8,17 @@ import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.inventory.ItemStack;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
 public class PlayerPointDataIO {
-    static File playerPointDataFolder = new File(SharedDir.dir, "PlayerPointData");
+    static File playerPointDataFolder = new File("shared", "PlayerPointData");
     static String pointSection = "Point.";
     static String obtainedNumberSection = "ObtainedNumber.";
 
-    public static void saveSettings(PlayerPointData playerPointData) {
+    public static void savePlayerPointData(PlayerPointData playerPointData) {
         initSaveSettings(playerPointDataFolder);
         File playerPointDataFile = new File(playerPointDataFolder, String.valueOf(playerPointData.offlinePlayer.getUniqueId()) + ".yml");
         if(!playerPointDataFile.exists()) {
@@ -62,7 +61,7 @@ public class PlayerPointDataIO {
     public static PlayerPointData loadPlayerPointData(OfflinePlayer player) {
         File rewardDataFile = new File(playerPointDataFolder, String.valueOf(player.getUniqueId()) + ".yml");
         if(!rewardDataFile.exists()){
-            saveSettings(new PlayerPointData(player, PointList.EVENT_POINT.getName(), 0));
+            savePlayerPointData(new PlayerPointData(player, PointList.EVENT_POINT.getName(), 0));
             Bukkit.getLogger().info(player.getName() + "のPlayerPointDataが存在しないため生成しました");
         }
 

@@ -21,7 +21,7 @@ public class SetNeedMinPoint extends GUIItem {
     public SetNeedMinPoint(InventoryGUI gui, RewardData rewardData) {
         super(gui, new ItemStack(Material.NETHER_STAR));
         setDisplayName(ChatColor.translateAlternateColorCodes('&', "&6受け取りに必要なPoint数の最低値を設定する(数字のみ)"));
-        if(rewardData.rewardID != null){
+        if(rewardData.needMinPoint != null){
             List<Component> lore = new ArrayList<>();
             lore.add(Component.text("[現在設定されている値]:").color(NamedTextColor.GRAY).append(Component.text(rewardData.needMinPoint)));
             setLore(lore);
@@ -31,6 +31,7 @@ public class SetNeedMinPoint extends GUIItem {
 
     @Override
     public void onClick(InventoryClickEvent e) {
+        gui.player.sendMessage("設定したい最小必要ポイントを入力してください");
         Pointed.instance.getChatReader().registerNextChat(gui.player, ChatContentType.NEED_MIN_POINT, rewardData);
     }
 }

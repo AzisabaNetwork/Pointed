@@ -31,6 +31,7 @@ public class SetRewardID extends GUIItem {
 
     @Override
     public void onClick(InventoryClickEvent e) {
+        gui.player.sendMessage("設定したいRewardIDを0-53の範囲で入力してください");
         Pointed.instance.getChatReader().registerNextChat(gui.player, ChatContentType.REWARD_ID, rewardData);
     }
 }

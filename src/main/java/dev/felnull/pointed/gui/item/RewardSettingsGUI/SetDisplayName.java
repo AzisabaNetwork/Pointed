@@ -31,6 +31,7 @@ public class SetDisplayName extends GUIItem {
 
     @Override
     public void onClick(InventoryClickEvent e) {
+        gui.player.sendMessage("表示したい名前を入力してください");
         Pointed.instance.getChatReader().registerNextChat(gui.player, ChatContentType.DISPLAY_NAME, rewardData);
     }
 }

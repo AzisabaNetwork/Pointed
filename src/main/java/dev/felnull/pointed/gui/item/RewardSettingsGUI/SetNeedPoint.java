@@ -31,6 +31,7 @@ public class SetNeedPoint extends GUIItem {
 
     @Override
     public void onClick(InventoryClickEvent e) {
+        gui.player.sendMessage("設定したい必要ポイントを入力してください");
         Pointed.instance.getChatReader().registerNextChat(gui.player, ChatContentType.NEED_POINT, rewardData);
     }
 }

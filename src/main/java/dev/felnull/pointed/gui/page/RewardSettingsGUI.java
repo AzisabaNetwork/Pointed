@@ -1,9 +1,11 @@
 package dev.felnull.pointed.gui.page;
 
 import dev.felnull.bettergui.core.InventoryGUI;
+import dev.felnull.pointed.Pointed;
 import dev.felnull.pointed.data.RewardData;
 import dev.felnull.pointed.gui.PointedGUIPage;
 import dev.felnull.pointed.gui.item.RewardSettingsGUI.*;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;

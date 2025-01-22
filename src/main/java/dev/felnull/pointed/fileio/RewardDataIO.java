@@ -1,6 +1,8 @@
 package dev.felnull.pointed.fileio;
 
+import dev.felnull.pointed.Pointed;
 import dev.felnull.pointed.data.RewardData;
+import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.inventory.ItemStack;
@@ -10,7 +12,7 @@ import java.io.IOException;
 import java.util.*;
 
 public class RewardDataIO {
-    static File playerPointDataFolder = new File(SharedDir.dir, "PointedReward");
+    static File playerPointDataFolder = new File("shared", "PointedReward");
     static String displayNameSection = ".DisplayName";
     static String needPointSection = ".NeedPoint";
     static String needMinPointSection = ".NeedMinPoint";

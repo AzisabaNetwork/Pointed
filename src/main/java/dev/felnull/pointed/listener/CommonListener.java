@@ -16,4 +16,5 @@ public class CommonListener implements Listener {
             PlayerPointDataIO.loadPlayerPointData(offlinePlayer);
         }
     }
+
 }
