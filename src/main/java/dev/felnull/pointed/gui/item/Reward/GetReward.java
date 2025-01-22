@@ -20,7 +20,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 import java.util.List;
 
 public class GetReward extends GUIItem {
-    boolean canGetReward;
+    boolean canGetReward = false;
     RewardData rewardData;
     PlayerPointData playerPointData;
     public GetReward(InventoryGUI gui, RewardData rewardData, PlayerPointData playerPointData) {
@@ -75,6 +75,8 @@ public class GetReward extends GUIItem {
 
         if(canGetReward){
             playerPointData.addnumberofGetReward(rewardData);
+            playerPointData.subtractPoint(PointList.EVENT_POINT.getName(), rewardData.needPoint);
+            PlayerPointDataIO.savePlayerPointData(playerPointData);
             for(ItemStack item : itemStackList){
                 playerInventory.addItem(item);
             }

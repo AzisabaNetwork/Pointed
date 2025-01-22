@@ -17,7 +17,7 @@ import java.util.List;
 public class RewardPage extends PointedGUIPage {
     PlayerPointData playerPointData;
     public RewardPage(InventoryGUI gui) {
-        super(gui, ChatColor.translateAlternateColorCodes('&', "&a[Pointed]&6&lRewardSettings"), 6*9);
+        super(gui, ChatColor.translateAlternateColorCodes('&', "&a報酬受け取りGUI"), 6*9);
     }
 
     @Override
