@@ -1,0 +1,13 @@
+name: Pointed
+version: '${project.version}'
+main: dev.felnull.pointed.Pointed
+api-version: '1.16'
+commands:
+  pointed:
+    permission: pointed.command.admin
+    aliases: [ptd]
+permissions:
+  pointed.command.admin:
+    default: op
+  pointed.command.player:
+    default: true
