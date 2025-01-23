@@ -2,8 +2,10 @@ package dev.felnull.pointed.commands;
 
 import dev.felnull.bettergui.core.InventoryGUI;
 import dev.felnull.pointed.PointList;
+import dev.felnull.pointed.Pointed;
 import dev.felnull.pointed.data.PlayerPointData;
 import dev.felnull.pointed.data.RewardData;
+import dev.felnull.pointed.fileio.ConfigList;
 import dev.felnull.pointed.fileio.PlayerPointDataIO;
 import dev.felnull.pointed.fileio.RewardDataIO;
 import dev.felnull.pointed.gui.page.RewardSettingsGUI;
@@ -14,6 +16,7 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
@@ -94,6 +97,30 @@ public class MainPointedCommand implements CommandExecutor {
                     sender.sendMessage("{/pointed point プレイヤー名 [add,subtract,set] 数字}で入力してください");
                 }
                 break;
+            case "debug":
+                if(args.length == 1){
+                    Player player = (Player) sender;
+                    PlayerPointData playerPointData = PlayerPointDataIO.loadPlayerPointData(player);
+                    for (RewardData rewardData : RewardDataIO.loadRewards()){
+                        sender.sendMessage(String.valueOf(playerPointData.getnumberofGetReward(rewardData)));
+                    }
+
+                }
+                break;
+            case "toggle":
+                boolean cURP = !Pointed.canUseRewardPage;
+                FileConfiguration config = Pointed.getInstance().getConfig();
+                if(cURP){
+                    sender.sendMessage("リワードの受け取りを許可しました");
+                }else {
+                    sender.sendMessage("リワードの受け取りを無効化しました");
+                }
+                Pointed.canUseRewardPage = cURP;
+                config.set(ConfigList.CANUSEREWARDPAGE.configName, cURP);
+                Pointed.getInstance().saveConfig();
+
+                break;
+
 
 
         }

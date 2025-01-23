@@ -17,6 +17,8 @@ public class PlayerPointDataIO {
     static File playerPointDataFolder = new File("shared", "PlayerPointData");
     static String pointSection = "Point.";
     static String obtainedNumberSection = "ObtainedNumber.";
+    static String heldPointSection = ".heldpoint";
+    static String totalPointSection = ".total";
 
     public static void savePlayerPointData(PlayerPointData playerPointData) {
         initSaveSettings(playerPointDataFolder);
@@ -32,7 +34,8 @@ public class PlayerPointDataIO {
 
         //データ追加
         for(String key: playerPointData.getPointMapKeys()){
-            playerPointDataYamlFile.set(pointSection + key, playerPointData.getPoint(key));
+            playerPointDataYamlFile.set(pointSection + key + heldPointSection, playerPointData.getPoint(key));
+            playerPointDataYamlFile.set(pointSection + key + totalPointSection, playerPointData.getTotalPoint(key));
         }
         List<RewardData> rewardDataList = RewardDataIO.loadRewards();
         for(RewardData rewardData : rewardDataList){
@@ -69,18 +72,21 @@ public class PlayerPointDataIO {
 
         Set<String> keys = rewardDataYaml.getConfigurationSection("Point").getKeys(false);
         Map<String,Integer> pointMap = new HashMap<>();
-        Map<RewardData, Integer> numberofGetReward = new HashMap<>();
+        Map<String,Integer> totalPointMap = new HashMap<>();
+        Map<Integer, Integer> numberofGetReward = new HashMap<>();
 
         for(String key : keys) {
-            int point = rewardDataYaml.getInt(pointSection + key);
-            pointMap.put(key,point);
+            int point = rewardDataYaml.getInt(pointSection + key + heldPointSection);
+            int totalPoint = rewardDataYaml.getInt(pointSection + key + totalPointSection);
+            pointMap.put(key, point);
+            totalPointMap.put(key, totalPoint);
         }
 
         List<RewardData> rewardDataList = RewardDataIO.loadRewards();
         for(RewardData rewardData : rewardDataList){
-            numberofGetReward.put(rewardData, rewardDataYaml.getInt(obtainedNumberSection + rewardData.rewardID));
+            numberofGetReward.put(rewardData.rewardID, rewardDataYaml.getInt(obtainedNumberSection + rewardData.rewardID));
         }
-        PlayerPointData playerPointData = new PlayerPointData(player, pointMap, numberofGetReward);
+        PlayerPointData playerPointData = new PlayerPointData(player, pointMap, numberofGetReward, totalPointMap);
         Pointed.instance.playerPlayerPointDataCache.put(player, playerPointData);
         return playerPointData;
     }

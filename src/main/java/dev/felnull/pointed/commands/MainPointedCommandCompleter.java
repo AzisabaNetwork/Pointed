@@ -14,13 +14,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class CreatePointedRewardCompleter implements TabCompleter {
+public class MainPointedCommandCompleter implements TabCompleter {
     @Override
     public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String alias, @NotNull String[] args) {
         List<String> suggestions = new ArrayList<>();
         if (command.getName().equalsIgnoreCase("pointed")){
             if(args.length == 1){
-                suggestions = Arrays.asList("create", "point");
+                suggestions = Arrays.asList("create", "point", "toggle");
             }
             if(args.length == 2){
                 switch (args[0]){
