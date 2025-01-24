@@ -80,7 +80,7 @@ public class RankingSystem {
             int totalPoints = playerPointData.getTotalPoint(PointList.EVENT_POINT.getName());
 
             // ランキングをチャットに表示
-            onlinePlayer.sendMessage(String.format("第%1d 位: %-12s- 累計戦果数:%-3s", rank, player.getName(), totalPoints));
+            onlinePlayer.sendMessage(String.format("第" + rank + "位: %-12s- 累計戦果数:%-3s", player.getName(), totalPoints));
 
             // ランキングの順位をインクリメント
             rank++;
@@ -105,7 +105,7 @@ public class RankingSystem {
             int totalPoints = playerPointData.getTotalPoint(PointList.EVENT_POINT.getName());
 
             // ランキングをチャットに表示
-            Bukkit.broadcastMessage(String.format("第%1d 位: %-12s- 累計戦果数:%-3s", rank, player.getName(), totalPoints));
+            Bukkit.broadcastMessage(String.format("第" + rank + "位: %-12s- 累計戦果数:%-3s", player.getName(), totalPoints));
 
             // ランキングの順位をインクリメント
             rank++;
