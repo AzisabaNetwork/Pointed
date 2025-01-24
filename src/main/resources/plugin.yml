@@ -9,13 +9,10 @@ commands:
     permission: pointed.command.admin
     aliases: [ptd]
   ptreward:
-    permission: pointed.command.player
     aliases: [ptr]
   mypoint:
-    permission: pointed.command.player
     aliases: [myp]
   ranking:
-    permission: pointed.command.player
     aliases: [ ranking ]
 permissions:
   pointed.command.admin:

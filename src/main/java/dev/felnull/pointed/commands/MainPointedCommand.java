@@ -25,15 +25,19 @@ import java.util.List;
 public class MainPointedCommand implements CommandExecutor {
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
-        if(sender instanceof ConsoleCommandSender){
-            Bukkit.getLogger().warning("このコマンドはプレイヤー専用です!");
-            return false;
-        }
 
-        InventoryGUI gui = new InventoryGUI((Player) sender);
+
+        if(args.length == 0){
+            return true;
+        }
         switch (args[0]){
 
             case "create":
+                if(sender instanceof ConsoleCommandSender){
+                    Bukkit.getLogger().warning("このコマンドはプレイヤー専用です!");
+                    return false;
+                }
+                InventoryGUI gui = new InventoryGUI((Player) sender);
                 if(args.length == 1) {
                     gui.openPage(new RewardSettingsGUI(gui));
                 }else {

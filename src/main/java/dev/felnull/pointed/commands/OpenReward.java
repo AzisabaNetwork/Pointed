@@ -41,7 +41,7 @@ public class OpenReward implements CommandExecutor {
                 sender.sendMessage("運営のため制限を解除しました");
                 sender.sendMessage("本来は制限がかかっているため注意してください");
             }else if(!Pointed.isLobby){
-                sender.sendMessage("注意!!ロビーでの報酬受け取りを制限中です");
+                sender.sendMessage("注意!!ロビー以外での報酬受け取りを制限中です");
                 sender.sendMessage("運営のため制限を解除しました");
                 sender.sendMessage("本来は制限がかかっているため注意してください");
             }

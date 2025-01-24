@@ -5,7 +5,9 @@ import dev.felnull.pointed.data.PlayerPointData;
 import dev.felnull.pointed.fileio.ConfigList;
 import dev.felnull.pointed.listener.ChatListener;
 import dev.felnull.pointed.listener.CommonListener;
+import dev.felnull.pointed.task.ClockMachine;
 import dev.felnull.pointed.util.ChatReader;
+import dev.felnull.pointed.util.RankingSystem;
 import lombok.Getter;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
@@ -54,5 +56,8 @@ public final class Pointed extends JavaPlugin {
     public void setupPlugin(){
         canUseRewardPage = getConfig().getBoolean(ConfigList.CANUSEREWARDPAGE.configName, false);
         isLobby = getConfig().getBoolean(ConfigList.ISLOBBY.configName, false);
+
+        RankingSystem.getRankingList();
+        new ClockMachine().rankingUpdaterTaskStarter();
     }
 }

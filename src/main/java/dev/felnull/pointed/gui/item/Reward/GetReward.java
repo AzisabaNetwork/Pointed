@@ -37,7 +37,12 @@ public class GetReward extends GUIItem {
 
         List<Component> lore = new ArrayList<>();
         lore.add(Component.text(ChatColor.translateAlternateColorCodes('&', "&6現在保有しているポイント数&f: " + nowPoint)));
-        lore.add(Component.text(ChatColor.translateAlternateColorCodes('&', "&6消費ポイント数&f: " + needPoint)));
+        if(rewardData.repeatable || playerPointData.getnumberofGetReward(rewardData) == 0 ){
+            lore.add(Component.text(ChatColor.translateAlternateColorCodes('&', "&6消費ポイント数&f: " + needPoint)));
+        }else {
+            lore.add(Component.text(ChatColor.translateAlternateColorCodes('&', "&6この報酬は受け取り済みです")));
+        }
+
         if(rewardData.needMinPoint != null && rewardData.needMinPoint != 0){
             lore.add(Component.text(ChatColor.translateAlternateColorCodes('&', "&6受け取りに必要な累計ポイント数&f: " + rewardData.needMinPoint)));
         }
@@ -90,10 +95,15 @@ public class GetReward extends GUIItem {
             playerPointData.addnumberofGetReward(rewardData);
             playerPointData.subtractPoint(PointList.EVENT_POINT.getName(), needPoint);
             PlayerPointDataIO.savePlayerPointData(playerPointData);
+            gui.player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&f----------------------"));
+            gui.player.sendMessage(ChatColor.translateAlternateColorCodes('&', rewardData.displayName + "&6 の報酬を獲得!"));
+            gui.player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&f----------------------"));
             for(ItemStack item : itemStackList){
                 playerInventory.addItem(item);
+                ItemMeta meta = item.getItemMeta();
+                gui.player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&6" + meta.getDisplayName() + "&f*" + item.getAmount()));
             }
-            gui.player.sendMessage(ChatColor.translateAlternateColorCodes('&', rewardData.displayName + "&6の報酬を獲得!"));
+            gui.player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&f----------------------"));
             gui.player.playSound(gui.player.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 1.0f,1.0f);
             gui.currentPage.setUp();
         }

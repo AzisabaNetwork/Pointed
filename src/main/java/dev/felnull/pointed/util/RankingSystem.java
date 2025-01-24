@@ -1,7 +1,6 @@
 package dev.felnull.pointed.util;
 
 import dev.felnull.pointed.PointList;
-import dev.felnull.pointed.Pointed;
 import dev.felnull.pointed.data.PlayerPointData;
 import dev.felnull.pointed.fileio.PlayerPointDataIO;
 import org.bukkit.Bukkit;
@@ -12,11 +11,11 @@ import org.bukkit.entity.Player;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import static dev.felnull.pointed.fileio.PlayerPointDataIO.loadPlayerPointData;
 
 public class RankingSystem {
+    public static List<Map.Entry<OfflinePlayer, PlayerPointData>> allPlayerDataCache = new ArrayList<>();
+    public static Calendar allPlayerDataSetTime;
+
     // すべてのプレイヤーデータをロード
     private static List<Map.Entry<OfflinePlayer, PlayerPointData>> loadAllPlayerData() {
         List<Map.Entry<OfflinePlayer, PlayerPointData>> playerDataList = new ArrayList<>();
@@ -26,16 +25,16 @@ public class RankingSystem {
             PlayerPointData playerPointData = PlayerPointDataIO.loadPlayerPointData(player);  // データをロード
             playerDataList.add(new AbstractMap.SimpleEntry<>(player, playerPointData));
         }
-
         return playerDataList;
     }
 
     // ランキングを取得して表示
     public static List<Map.Entry<OfflinePlayer, PlayerPointData>> getRankingList() {
-        // 非同期でデータをロードし、ソート
+
+        // 非同期でデータ処理
         CompletableFuture<List<Map.Entry<OfflinePlayer, PlayerPointData>>> future = CompletableFuture.supplyAsync(() -> {
-            // データをロード
-            List<Map.Entry<OfflinePlayer, PlayerPointData>> playerDataList = RankingSystem.loadAllPlayerData();
+            //読み込み
+            List<Map.Entry<OfflinePlayer, PlayerPointData>> playerDataList = loadAllPlayerData();
 
             // ソート
             playerDataList.sort((entry1, entry2) -> {
@@ -43,7 +42,8 @@ public class RankingSystem {
                 int points2 = entry2.getValue().getTotalPoint(PointList.EVENT_POINT.getName());
                 return Integer.compare(points2, points1); // 降順にソート
             });
-
+            allPlayerDataCache = playerDataList;
+            allPlayerDataSetTime = Calendar.getInstance();
             return playerDataList; // ソート済みリストを返す
         });
         try {
@@ -55,13 +55,23 @@ public class RankingSystem {
         }
     }
 
+    public static void getMyRanking(Player player){
+        if(allPlayerDataCache.isEmpty()){
+            loadAllPlayerData();
+        }
+        for (Map.Entry<OfflinePlayer, PlayerPointData> entry : allPlayerDataCache) {
+            
+        }
+
+    }
+
     public static void displayRanking(Player onlinePlayer){
         // ランキングを表示（上位10人を表示など）
         int rank = 1;
 
         onlinePlayer.sendMessage(ChatColor.translateAlternateColorCodes('&', "&f&l--------[&b&l戦果ランキング&f&l]--------"));
 
-        for (Map.Entry<OfflinePlayer, PlayerPointData> entry : getRankingList()) {
+        for (Map.Entry<OfflinePlayer, PlayerPointData> entry : allPlayerDataCache) {
             if(rank >= 8){
                 break;
             }
@@ -70,11 +80,38 @@ public class RankingSystem {
             int totalPoints = playerPointData.getTotalPoint(PointList.EVENT_POINT.getName());
 
             // ランキングをチャットに表示
-            onlinePlayer.sendMessage(String.format("第%2d位: %-12s- 累計戦果数:%-3s", rank, player.getName(), totalPoints));
+            onlinePlayer.sendMessage(String.format("第%1d 位: %-12s- 累計戦果数:%-3s", rank, player.getName(), totalPoints));
 
             // ランキングの順位をインクリメント
             rank++;
         }
         onlinePlayer.sendMessage(ChatColor.translateAlternateColorCodes('&', "&f&l---------------------------"));
+        onlinePlayer.sendMessage(ChatColor.translateAlternateColorCodes('&',   "&f" + allPlayerDataSetTime.get(Calendar.HOUR_OF_DAY) + "&f時" + allPlayerDataSetTime.get(Calendar.MINUTE) + "&f分更新"));
+        onlinePlayer.sendMessage(ChatColor.translateAlternateColorCodes('&', "&f&l---------------------------"));
+    }
+
+    public static void broadcastRanking(){
+        // ランキングを表示（上位10人を表示など）
+        int rank = 1;
+
+        Bukkit.broadcastMessage(ChatColor.translateAlternateColorCodes('&', "&f&l--------[&b&l戦果ランキング&f&l]--------"));
+
+        for (Map.Entry<OfflinePlayer, PlayerPointData> entry : allPlayerDataCache) {
+            if(rank >= 8){
+                break;
+            }
+            OfflinePlayer player = entry.getKey();
+            PlayerPointData playerPointData = entry.getValue();
+            int totalPoints = playerPointData.getTotalPoint(PointList.EVENT_POINT.getName());
+
+            // ランキングをチャットに表示
+            Bukkit.broadcastMessage(String.format("第%1d 位: %-12s- 累計戦果数:%-3s", rank, player.getName(), totalPoints));
+
+            // ランキングの順位をインクリメント
+            rank++;
+        }
+        Bukkit.broadcastMessage(ChatColor.translateAlternateColorCodes('&', "&f&l---------------------------"));
+        Bukkit.broadcastMessage(ChatColor.translateAlternateColorCodes('&',   "&f" + allPlayerDataSetTime.get(Calendar.HOUR_OF_DAY) + "&f時" + allPlayerDataSetTime.get(Calendar.MINUTE) + "&f分更新"));
+        Bukkit.broadcastMessage(ChatColor.translateAlternateColorCodes('&', "&f&l---------------------------"));
     }
 }
