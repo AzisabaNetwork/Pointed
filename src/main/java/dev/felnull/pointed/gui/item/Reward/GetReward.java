@@ -20,6 +20,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class GetReward extends GUIItem {
     boolean canGetReward = false;
@@ -48,6 +49,13 @@ public class GetReward extends GUIItem {
         }
         if(rewardData.repeatable){
             lore.add(Component.text(ChatColor.translateAlternateColorCodes('&', "&6&l繰り返し受け取り可能!")));
+        }
+        lore.add(Component.text(""));
+        for (ItemStack item : rewardData.getRewardList()){
+            ItemMeta meta = item.getItemMeta();
+            if(meta.displayName() != null) {
+                lore.add(Objects.requireNonNull(meta.displayName()).append(Component.text("x" + item.getAmount())));
+            }
         }
         setLore(lore);
         ItemMeta meta = itemStack.getItemMeta();

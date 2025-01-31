@@ -35,6 +35,7 @@ public final class Pointed extends JavaPlugin {
         setupListener();
         saveDefaultConfig();
         setupPlugin();
+
     }
 
     @Override
