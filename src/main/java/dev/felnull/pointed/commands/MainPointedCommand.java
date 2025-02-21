@@ -9,7 +9,9 @@ import dev.felnull.pointed.fileio.ConfigList;
 import dev.felnull.pointed.fileio.PlayerPointDataIO;
 import dev.felnull.pointed.fileio.RewardDataIO;
 import dev.felnull.pointed.gui.page.RewardSettingsGUI;
+import dev.felnull.pointed.task.ClockMachine;
 import dev.felnull.pointed.util.PointedUtilities;
+import dev.felnull.pointed.util.RankingSystem;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.Command;
@@ -18,6 +20,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
+import org.bukkit.scheduler.BukkitTask;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -30,6 +33,7 @@ public class MainPointedCommand implements CommandExecutor {
         if(args.length == 0){
             return true;
         }
+        FileConfiguration config = Pointed.getInstance().getConfig();
         switch (args[0]){
 
             case "create":
@@ -104,16 +108,13 @@ public class MainPointedCommand implements CommandExecutor {
             case "debug":
                 if(args.length == 1){
                     Player player = (Player) sender;
-                    PlayerPointData playerPointData = PlayerPointDataIO.loadPlayerPointData(player);
-                    for (RewardData rewardData : RewardDataIO.loadRewards()){
-                        sender.sendMessage(String.valueOf(playerPointData.getnumberofGetReward(rewardData)));
-                    }
+                    RankingSystem.getRankingList(ranking -> {RankingSystem.broadcastRanking();});
 
                 }
                 break;
             case "toggle":
                 boolean cURP = !Pointed.canUseRewardPage;
-                FileConfiguration config = Pointed.getInstance().getConfig();
+
                 if(cURP){
                     sender.sendMessage("リワードの受け取りを許可しました");
                 }else {
@@ -124,9 +125,21 @@ public class MainPointedCommand implements CommandExecutor {
                 Pointed.getInstance().saveConfig();
 
                 break;
+            case "toggleRanking":
+                boolean useRanking = !Pointed.ranking;
 
-
-
+                if(useRanking){
+                    sender.sendMessage("ランキング機能を有効化しました");
+                    new ClockMachine().rankingUpdaterTaskStarter();
+                }else {
+                    sender.sendMessage("ランキング機能を無効化しました");
+                    for(BukkitTask task: Pointed.taskList){
+                        task.cancel();
+                    }
+                }
+                Pointed.ranking = useRanking;
+                config.set(ConfigList.RANKING.configName, useRanking);
+                Pointed.getInstance().saveConfig();
         }
 
 

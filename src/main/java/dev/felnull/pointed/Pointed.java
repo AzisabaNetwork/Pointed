@@ -12,8 +12,11 @@ import lombok.Getter;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitTask;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public final class Pointed extends JavaPlugin {
@@ -25,6 +28,8 @@ public final class Pointed extends JavaPlugin {
     public Map<OfflinePlayer, PlayerPointData> playerPlayerPointDataCache = new HashMap<>();
     public static boolean canUseRewardPage;
     public static boolean isLobby;
+    public static boolean ranking;
+    public static List<BukkitTask> taskList = new ArrayList<>();
 
     @Override
     public void onEnable() {
@@ -57,8 +62,9 @@ public final class Pointed extends JavaPlugin {
     public void setupPlugin(){
         canUseRewardPage = getConfig().getBoolean(ConfigList.CANUSEREWARDPAGE.configName, false);
         isLobby = getConfig().getBoolean(ConfigList.ISLOBBY.configName, false);
+        ranking = getConfig().getBoolean(ConfigList.RANKING.configName, false);
 
-        RankingSystem.getRankingList();
+        RankingSystem.getRankingList(ranking -> {});
         new ClockMachine().rankingUpdaterTaskStarter();
     }
 }

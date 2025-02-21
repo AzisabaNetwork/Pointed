@@ -6,6 +6,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
+import org.bukkit.scheduler.BukkitTask;
 
 import java.util.Calendar;
 import java.util.concurrent.TimeUnit;
@@ -14,14 +15,15 @@ public class ClockMachine {
 
     public void rankingUpdaterTaskStarter(){
         //0時と12時にランキング更新
-        scheduleDailyTask(23, 0, this::rankingUpdaterDefaultTask);
-        scheduleDailyTask(11, 0, this::rankingUpdaterDefaultTask);
+        if(Pointed.ranking) {
+            scheduleDailyTask(23, 0, this::rankingUpdaterDefaultTask);
+            scheduleDailyTask(11, 0, this::rankingUpdaterDefaultTask);
+        }
     }
 
     private void rankingUpdaterDefaultTask(){
         Bukkit.getServer().broadcast(Component.text("戦果ランキングが更新されました").color(NamedTextColor.AQUA).decorate(TextDecoration.BOLD));
-        RankingSystem.getRankingList();
-        RankingSystem.broadcastRanking();
+        RankingSystem.getRankingList(ranking -> {RankingSystem.broadcastRanking();});
     }
 
     //1日の指定された時間、分に送られてきたタスクを実行
@@ -42,6 +44,6 @@ public class ClockMachine {
         long initialDelay = targetMillis - currentMillis;
         long oneDayInTicks = 20L * 60 * 60 * 24; // 1日の長さ (20 ticks/秒)
 
-        Bukkit.getScheduler().runTaskTimer(Pointed.getInstance(), task, initialDelay / 50 + 2, oneDayInTicks);
+        Pointed.taskList.add(Bukkit.getScheduler().runTaskTimer(Pointed.getInstance(), task, initialDelay / 50 + 2, oneDayInTicks));
     }
 }

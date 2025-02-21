@@ -11,6 +11,7 @@ import org.bukkit.entity.Player;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Consumer;
 
 public class RankingSystem {
     public static List<Map.Entry<OfflinePlayer, PlayerPointData>> allPlayerDataCache = new ArrayList<>();
@@ -29,10 +30,9 @@ public class RankingSystem {
     }
 
     // ランキングを取得して表示
-    public static List<Map.Entry<OfflinePlayer, PlayerPointData>> getRankingList() {
-
+    public static void getRankingList(Consumer<List<Map.Entry<OfflinePlayer, PlayerPointData>>> callback) {
         // 非同期でデータ処理
-        CompletableFuture<List<Map.Entry<OfflinePlayer, PlayerPointData>>> future = CompletableFuture.supplyAsync(() -> {
+        CompletableFuture.supplyAsync(() -> {
             //読み込み
             List<Map.Entry<OfflinePlayer, PlayerPointData>> playerDataList = loadAllPlayerData();
 
@@ -45,14 +45,7 @@ public class RankingSystem {
             allPlayerDataCache = playerDataList;
             allPlayerDataSetTime = Calendar.getInstance();
             return playerDataList; // ソート済みリストを返す
-        });
-        try {
-            // 非同期処理の完了を待機し、結果を取得
-            return future.get(); // get()で結果を取得（同期的に待機）
-        } catch (InterruptedException | ExecutionException e) {
-            e.printStackTrace();
-            return Collections.emptyList(); // エラー時は空のリストを返す
-        }
+        }).thenAcceptAsync(callback);
     }
 
     public static void getMyRanking(Player player){

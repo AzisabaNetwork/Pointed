@@ -1,5 +1,6 @@
 package dev.felnull.pointed.commands;
 
+import dev.felnull.pointed.Pointed;
 import dev.felnull.pointed.util.RankingSystem;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -15,7 +16,11 @@ public class RankingCommand implements CommandExecutor {
             sender.sendMessage("このコマンドはプレイヤー専用です");
             return true;
         }
-        RankingSystem.displayRanking((Player) sender);
+        if(Pointed.ranking) {
+            RankingSystem.displayRanking((Player) sender);
+        }else {
+            sender.sendMessage("現在ランキングが無効化されています");
+        }
         return true;
     }
 }
