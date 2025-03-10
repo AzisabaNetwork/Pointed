@@ -14,11 +14,11 @@ import java.io.IOException;
 import java.util.*;
 
 public class PlayerPointDataIO {
-    static File playerPointDataFolder = new File("shared", "PlayerPointData");
-    static String pointSection = "Point.";
-    static String obtainedNumberSection = "ObtainedNumber.";
-    static String heldPointSection = ".heldpoint";
-    static String totalPointSection = ".total";
+    public static File playerPointDataFolder = new File("shared", "PlayerPointData");
+    public static String pointSection = "Point.";
+    public static String obtainedNumberSection = "ObtainedNumber.";
+    public static String heldPointSection = ".heldpoint";
+    public static String totalPointSection = ".total";
 
     public static void savePlayerPointData(PlayerPointData playerPointData) {
         initSaveSettings(playerPointDataFolder);
