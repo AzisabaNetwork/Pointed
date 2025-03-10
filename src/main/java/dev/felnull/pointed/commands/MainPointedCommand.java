@@ -66,23 +66,30 @@ public class MainPointedCommand implements CommandExecutor {
             case "point":
                 if(args.length == 1) {
                     sender.sendMessage("プレイヤー名を指定してください");
-                }else if (args.length == 4) {
-                    Player player = Bukkit.getPlayer(args[1]);
+                }else if (args.length == 5) {
+                    PointList pointList;
+                    try {
+                        pointList = PointList.fromAllies(args[1]);
+                    } catch (IllegalArgumentException e) {
+                        sender.sendMessage(e.getMessage());
+                        return true;
+                    }
+                    Player player = Bukkit.getPlayer(args[2]);
                     OfflinePlayer offlinePlayer;
-                    if(player == null){
-                        offlinePlayer = Bukkit.getOfflinePlayer(args[1]);
-                        if(!offlinePlayer.hasPlayedBefore()){
+                    if (player == null) {
+                        offlinePlayer = Bukkit.getOfflinePlayer(args[2]);
+                        if (!offlinePlayer.hasPlayedBefore()) {
                             sender.sendMessage("存在しないプレイヤーです");
                         }
-                    }else {
+                    } else {
                         offlinePlayer = player;
                     }
-                    PlayerPointData playerPointData = PlayerPointDataIO.loadPlayerPointData(offlinePlayer);
-                    Integer number = PointedUtilities.formStringToInt(args[3]);
-                    if(number == null) {
+                    PlayerPointData playerPointData = PlayerPointDataIO.loadPlayerPointData(offlinePlayer, pointList);
+                    Integer number = PointedUtilities.formStringToInt(args[4]);
+                    if (number == null) {
                         number = 0;
                     }
-                    switch (args[2]){
+                    switch (args[3]) {
                         case "add":
                             playerPointData.addPoint(PointList.EVENT_POINT.getName(), number);
                             sender.sendMessage(offlinePlayer.getName() + "のポイントを" + number + "追加しました");
@@ -113,33 +120,55 @@ public class MainPointedCommand implements CommandExecutor {
                 }
                 break;
             case "toggle":
-                boolean cURP = !Pointed.canUseRewardPage;
-
-                if(cURP){
-                    sender.sendMessage("リワードの受け取りを許可しました");
+                if(args.length == 1){
+                    sender.sendMessage("変更したいポイント名を入力してください");
                 }else {
-                    sender.sendMessage("リワードの受け取りを無効化しました");
+                    PointList pointList;
+                    try {
+                        pointList = PointList.fromAllies(args[1]);
+                    } catch (IllegalArgumentException e) {
+                        sender.sendMessage(e.getMessage());
+                        return true;
+                    }
+                    boolean cURP = !Pointed.canUseRewardPage.get(pointList);
+
+                    if(cURP){
+                        sender.sendMessage(pointList.getAllies() + "のリワードの受け取りを許可しました");
+                    }else {
+                        sender.sendMessage(pointList.getAllies() + "のリワードの受け取りを無効化しました");
+                    }
+                    Pointed.canUseRewardPage.put(pointList,cURP);
+                    config.set(ConfigList.CANUSEREWARDPAGE.configName + "." + pointList.getName(), cURP);
+                    Pointed.getInstance().saveConfig();
                 }
-                Pointed.canUseRewardPage = cURP;
-                config.set(ConfigList.CANUSEREWARDPAGE.configName, cURP);
-                Pointed.getInstance().saveConfig();
 
                 break;
             case "toggleRanking":
-                boolean useRanking = !Pointed.ranking;
-
-                if(useRanking){
-                    sender.sendMessage("ランキング機能を有効化しました");
-                    new ClockMachine().rankingUpdaterTaskStarter();
+                if(args.length == 1){
+                    sender.sendMessage("変更したいポイント名を入力してください");
                 }else {
-                    sender.sendMessage("ランキング機能を無効化しました");
-                    for(BukkitTask task: Pointed.taskList){
-                        task.cancel();
+                    PointList pointList;
+                    try {
+                        pointList = PointList.fromAllies(args[1]);
+                    } catch (IllegalArgumentException e) {
+                        sender.sendMessage(e.getMessage());
+                        return true;
                     }
+                    boolean useRanking = !Pointed.ranking.get(pointList);
+
+                    if (useRanking) {
+                        sender.sendMessage(pointList.getAllies() + "のランキング機能を有効化しました");
+                        new ClockMachine().rankingUpdaterTaskStarter();
+                    } else {
+                        sender.sendMessage(pointList.getAllies() + "のランキング機能を無効化しました");
+                        for (BukkitTask task : Pointed.taskList) {
+                            task.cancel();
+                        }
+                    }
+                    Pointed.ranking.put(pointList, useRanking);
+                    config.set(ConfigList.RANKING.configName + "." + pointList.getName(), useRanking);
+                    Pointed.getInstance().saveConfig();
                 }
-                Pointed.ranking = useRanking;
-                config.set(ConfigList.RANKING.configName, useRanking);
-                Pointed.getInstance().saveConfig();
         }
 
 

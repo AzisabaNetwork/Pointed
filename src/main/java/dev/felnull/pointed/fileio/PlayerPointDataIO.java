@@ -14,11 +14,11 @@ import java.io.IOException;
 import java.util.*;
 
 public class PlayerPointDataIO {
-    static File playerPointDataFolder = new File("shared", "PlayerPointData");
-    static String pointSection = "Point.";
-    static String obtainedNumberSection = "ObtainedNumber.";
-    static String heldPointSection = ".heldpoint";
-    static String totalPointSection = ".total";
+    public static File playerPointDataFolder = new File("shared", "PlayerPointData");
+    public static String pointSection = "Point.";
+    public static String obtainedNumberSection = "ObtainedNumber.";
+    public static String heldPointSection = ".heldpoint";
+    public static String totalPointSection = ".total";
 
     public static void savePlayerPointData(PlayerPointData playerPointData) {
         initSaveSettings(playerPointDataFolder);
@@ -61,10 +61,10 @@ public class PlayerPointDataIO {
         return;
     }
 
-    public static PlayerPointData loadPlayerPointData(OfflinePlayer player) {
+    public static PlayerPointData loadPlayerPointData(OfflinePlayer player, PointList pointList) {
         File rewardDataFile = new File(playerPointDataFolder, String.valueOf(player.getUniqueId()) + ".yml");
         if(!rewardDataFile.exists()){
-            savePlayerPointData(new PlayerPointData(player, PointList.EVENT_POINT.getName(), 0));
+            savePlayerPointData(new PlayerPointData(player, pointList.getName(), 0));
             Bukkit.getLogger().info(player.getName() + "のPlayerPointDataが存在しないため生成しました");
         }
 

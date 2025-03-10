@@ -26,9 +26,9 @@ public final class Pointed extends JavaPlugin {
     @Getter
     public ChatReader chatReader;
     public Map<OfflinePlayer, PlayerPointData> playerPlayerPointDataCache = new HashMap<>();
-    public static boolean canUseRewardPage;
+    public static Map<PointList, Boolean> canUseRewardPage;
     public static boolean isLobby;
-    public static boolean ranking;
+    public static Map<PointList, Boolean> ranking;
     public static List<BukkitTask> taskList = new ArrayList<>();
 
     @Override
@@ -40,7 +40,6 @@ public final class Pointed extends JavaPlugin {
         setupListener();
         saveDefaultConfig();
         setupPlugin();
-
     }
 
     @Override

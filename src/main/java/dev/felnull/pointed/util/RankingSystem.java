@@ -6,12 +6,17 @@ import dev.felnull.pointed.fileio.PlayerPointDataIO;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 
+import java.awt.*;
+import java.io.File;
 import java.util.*;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
+
+import static dev.felnull.pointed.fileio.PlayerPointDataIO.playerPointDataFolder;
 
 public class RankingSystem {
     public static List<Map.Entry<OfflinePlayer, PlayerPointData>> allPlayerDataCache = new ArrayList<>();
@@ -20,9 +25,34 @@ public class RankingSystem {
     // すべてのプレイヤーデータをロード
     private static List<Map.Entry<OfflinePlayer, PlayerPointData>> loadAllPlayerData() {
         List<Map.Entry<OfflinePlayer, PlayerPointData>> playerDataList = new ArrayList<>();
+        File folder = playerPointDataFolder;
+        List<UUID> uuids = new ArrayList<>();
+
+        //対象のフォルダがない場合は生成
+        PlayerPointDataIO.initSaveSettings(playerPointDataFolder);
+
+        if(folder.listFiles() != null) {
+            for (File file : Objects.requireNonNull(folder.listFiles())) {
+                if (file.isFile() && file.getName().endsWith(".yml")) {
+                    try {
+                        // ファイル名から拡張子を除いた部分をUUIDとしてパース
+                        String fileName = file.getName().replace(".yml", "");
+                        UUID uuid = UUID.fromString(fileName);
+                        uuids.add(uuid);
+                    } catch (IllegalArgumentException e) {
+                        Bukkit.getLogger().warning(file.getName() + " はUUIDとして無効にゃ！");
+                    } catch (Exception e) {
+                        Bukkit.getLogger().warning(file.getName() + " の読み込み中にエラー発生にゃ〜: " + e.getMessage());
+                    }
+                }
+            }
+        }else {
+            Bukkit.getLogger().info("PointDataが１つもないにゃ!");
+        }
 
         // プレイヤーリストを取得（例: すべてのオフラインプレイヤー）
-        for (OfflinePlayer player : Bukkit.getOfflinePlayers()) {
+        for (UUID playerUUID : uuids) {
+            OfflinePlayer player = Bukkit.getOfflinePlayer(playerUUID);
             PlayerPointData playerPointData = PlayerPointDataIO.loadPlayerPointData(player);  // データをロード
             playerDataList.add(new AbstractMap.SimpleEntry<>(player, playerPointData));
         }

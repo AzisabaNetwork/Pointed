@@ -1,5 +1,6 @@
 package dev.felnull.pointed.commands;
 
+import dev.felnull.pointed.PointList;
 import dev.felnull.pointed.data.RewardData;
 import dev.felnull.pointed.fileio.RewardDataIO;
 import org.bukkit.Bukkit;
@@ -39,6 +40,15 @@ public class MainPointedCommandCompleter implements TabCompleter {
 
             }
             if(args.length == 3){
+                switch (args[0]){
+                    case "point":
+                        for(PointList pointList : PointList.values()){
+                            suggestions.add(pointList.getAllies());
+                        }
+                        break;
+                }
+            }
+            if(args.length == 4){
                 switch (args[0]){
                     case "point":
                         suggestions = Arrays.asList("add", "subtract", "set");
