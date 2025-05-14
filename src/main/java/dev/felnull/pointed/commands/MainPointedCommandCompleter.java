@@ -20,7 +20,7 @@ public class MainPointedCommandCompleter implements TabCompleter {
         List<String> suggestions = new ArrayList<>();
         if (command.getName().equalsIgnoreCase("pointed")){
             if(args.length == 1){
-                suggestions = Arrays.asList("create", "point", "toggle", "toggleRanking");
+                suggestions = Arrays.asList("create", "point", "toggle", "toggleRanking", "reset");
             }
             if(args.length == 2){
                 switch (args[0]){
@@ -36,7 +36,6 @@ public class MainPointedCommandCompleter implements TabCompleter {
                         }
                         break;
                 }
-
             }
             if(args.length == 3){
                 switch (args[0]){

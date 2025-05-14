@@ -20,12 +20,16 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class MainPointedCommand implements CommandExecutor {
+    Map<CommandSender, Boolean> areYouSure = new HashMap<>();
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
 
@@ -140,6 +144,27 @@ public class MainPointedCommand implements CommandExecutor {
                 Pointed.ranking = useRanking;
                 config.set(ConfigList.RANKING.configName, useRanking);
                 Pointed.getInstance().saveConfig();
+                break;
+            case "reset":
+                if(areYouSure.containsKey(sender)){
+                    if(areYouSure.get(sender)){
+                        PlayerPointDataIO.deleteYmlFiles(PlayerPointDataIO.playerPointDataFolder);
+                    }else {
+                        sender.sendMessage("PlayerPointDataを本当に削除してもいいですか？　Yesならもう一度コマンドを10秒以内に入力してください");
+                    }
+                }else {
+                    areYouSure.put(sender, true);
+                    sender.sendMessage("PlayerPointDataを本当に削除してもいいですか？　Yesならもう一度コマンドを10秒以内に入力してください");
+                }
+                new BukkitRunnable() {
+                    @Override
+                    public void run() {
+                        // ここに10秒後に行いたい処理を書くにゃ
+                        areYouSure.remove(sender);
+                        sender.sendMessage("10秒が経過したので削除を取り消します");
+                    }
+                }.runTaskLater(Pointed.instance, 20L * 10);
+                break;
         }
 
 

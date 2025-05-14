@@ -90,4 +90,17 @@ public class PlayerPointDataIO {
         Pointed.instance.playerPlayerPointDataCache.put(player, playerPointData);
         return playerPointData;
     }
+
+    public static void deleteYmlFiles(File folder) {
+        if (!folder.isDirectory()) return;
+
+        File[] files = folder.listFiles((dir, name) -> name.toLowerCase().endsWith(".yml"));
+        if (files == null) return;
+
+        for (File file : files) {
+            if (!file.delete()) {
+                Bukkit.getLogger().warning("削除失敗: " + file.getName());
+            }
+        }
+    }
 }
