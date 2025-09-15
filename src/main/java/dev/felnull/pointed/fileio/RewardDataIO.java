@@ -10,7 +10,7 @@ import org.bukkit.inventory.ItemStack;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
-
+/**
 public class RewardDataIO {
     static File playerPointDataFolder = new File("shared", "PointedReward");
     static String displayNameSection = ".DisplayName";
@@ -85,3 +85,4 @@ public class RewardDataIO {
         return rewardDataList;
     }
 }
+*/

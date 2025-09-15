@@ -3,7 +3,7 @@ package dev.felnull.pointed.gui.item.RewardSettingsGUI;
 import dev.felnull.bettergui.core.GUIItem;
 import dev.felnull.bettergui.core.InventoryGUI;
 import dev.felnull.pointed.data.RewardData;
-import dev.felnull.pointed.fileio.RewardDataIO;
+import dev.felnull.pointed.database.dataio.RewardDao;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -33,7 +33,7 @@ public class Complete extends GUIItem {
         }
 
 
-        if(RewardDataIO.saveReward(rewardData)){
+        if(RewardDao.saveReward(rewardData)){
             p.sendMessage("リワードデータを正常に保存しました");
             gui.currentPage.close();
         }else {

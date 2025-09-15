@@ -5,8 +5,6 @@ import dev.felnull.bettergui.core.InventoryGUI;
 import dev.felnull.pointed.PointList;
 import dev.felnull.pointed.data.PlayerPointData;
 import dev.felnull.pointed.data.RewardData;
-import dev.felnull.pointed.fileio.PlayerPointDataIO;
-import dev.felnull.pointed.fileio.RewardDataIO;
 import net.kyori.adventure.text.Component;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;

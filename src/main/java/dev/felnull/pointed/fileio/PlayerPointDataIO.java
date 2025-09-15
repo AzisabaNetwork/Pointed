@@ -12,7 +12,7 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
-
+/**
 public class PlayerPointDataIO {
     public static File playerPointDataFolder = new File("shared", "PlayerPointData");
     public static String pointSection = "Point.";
@@ -104,3 +104,4 @@ public class PlayerPointDataIO {
         }
     }
 }
+ */

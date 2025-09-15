@@ -8,8 +8,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class RewardData implements Comparable<RewardData> {
+
     public Integer rewardID;
     public String displayName;
+    public String pointTypeName;
     public Integer needPoint;
 
     public Integer needMinPoint;
@@ -18,9 +20,10 @@ public class RewardData implements Comparable<RewardData> {
     @Getter
     private List<ItemStack> rewardList = new ArrayList<>();
 
-    public RewardData(Integer rewardID, String displayName, Integer needPoint, Integer needMinPoint, boolean repeatable){
+    public RewardData(Integer rewardID, String displayName, String pointTypeName, Integer needPoint, Integer needMinPoint, boolean repeatable){
         this.rewardID = rewardID;
         this.displayName = displayName;
+        this.pointTypeName = pointTypeName;
         this.needPoint = needPoint;
         this.needMinPoint = needMinPoint;
         this.repeatable = repeatable;

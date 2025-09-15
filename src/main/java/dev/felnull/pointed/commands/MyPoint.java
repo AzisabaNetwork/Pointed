@@ -2,7 +2,8 @@ package dev.felnull.pointed.commands;
 
 import dev.felnull.pointed.PointList;
 import dev.felnull.pointed.data.PlayerPointData;
-import dev.felnull.pointed.fileio.PlayerPointDataIO;
+import dev.felnull.pointed.data.SubjectPointData;
+import dev.felnull.pointed.database.dataio.SubjectPointsDao;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -19,7 +20,7 @@ public class MyPoint implements CommandExecutor {
         }
 
         Player player = (Player) sender;
-        PlayerPointData playerPointData = PlayerPointDataIO.loadPlayerPointData(player);
+        PlayerPointData playerPointData = SubjectPointsDao.;
         sender.sendMessage(player.getName() + "の保有ポイント: " + playerPointData.getPoint(PointList.EVENT_POINT.getName()));
         return true;
     }
