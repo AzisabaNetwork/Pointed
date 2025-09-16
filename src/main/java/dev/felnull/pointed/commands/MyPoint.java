@@ -1,15 +1,18 @@
 package dev.felnull.pointed.commands;
 
-import dev.felnull.pointed.PointList;
-import dev.felnull.pointed.data.PlayerPointData;
-import dev.felnull.pointed.data.SubjectPointData;
+import dev.felnull.pointed.Pointed;
 import dev.felnull.pointed.database.dataio.SubjectPointsDao;
+import dev.felnull.pointed.database.dataio.SubjectRepository;
+import dev.felnull.pointed.fileio.ConfigList;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
+
+import java.sql.SQLException;
+import java.util.List;
 
 public class MyPoint implements CommandExecutor {
     @Override
@@ -20,8 +23,18 @@ public class MyPoint implements CommandExecutor {
         }
 
         Player player = (Player) sender;
-        PlayerPointData playerPointData = SubjectPointsDao.;
-        sender.sendMessage(player.getName() + "の保有ポイント: " + playerPointData.getPoint(PointList.EVENT_POINT.getName()));
+        List<String> viewPointList = Pointed.getInstance().getConfig().getStringList(ConfigList.VIEWPOINT.configName);
+        for(String viewPoint : viewPointList){
+            try {
+                int[] playerPointData = SubjectPointsDao.loadOneByName(SubjectRepository.ensurePlayer(((Player) sender).getUniqueId(), sender.getName()), viewPoint);
+                sender.sendMessage(viewPoint);
+                sender.sendMessage(player.getName() + "の保有ポイント: " + playerPointData[0] + "累計獲得ポイント: " + playerPointData[1]);
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+
         return true;
     }
 }

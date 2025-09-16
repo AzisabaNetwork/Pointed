@@ -27,21 +27,11 @@ public class RankingSystem {
 
     private static final int TOP_LIMIT = 10;
 
-    private static RankingDao rankingDao;
-    private static PointTypeDao pointTypeDao;
-    private static SubjectRepository subjectRepo;
-
-    public static void init(DataSource ds) {
-        rankingDao = new RankingDao(ds);
-        pointTypeDao = new PointTypeDao(ds);
-        subjectRepo = new SubjectRepository(ds);
-    }
-
     public static void getRankingList(Consumer<List<RankingEntry>> callback) {
         CompletableFuture<List<RankingEntry>> cf = CompletableFuture.supplyAsync(() -> {
             try {
-                int pointTypeId = pointTypeDao.ensurePointType(PointList.EVENT_POINT.getName());
-                List<RankingEntry> list = rankingDao.topNByTotal(pointTypeId, TOP_LIMIT); // 上位10だけ取得
+                int pointTypeId = PointTypeDao.ensurePointType(PointList.EVENT_POINT.getName());
+                List<RankingEntry> list = RankingDao.topNByTotal(pointTypeId, TOP_LIMIT); // 上位10だけ取得
                 allPlayerDataCache = list;
                 allPlayerDataSetTime = Calendar.getInstance();
                 return list;
@@ -63,9 +53,9 @@ public class RankingSystem {
         Bukkit.getScheduler().runTaskAsynchronously(Pointed.getInstance(), new Runnable() {
             @Override public void run() {
                 try {
-                    long sid = subjectRepo.ensurePlayer(player.getUniqueId(), player.getName());
-                    int pointTypeId = pointTypeDao.ensurePointType(PointList.EVENT_POINT.getName());
-                    int[] rt = rankingDao.myRankAndTotal(sid, pointTypeId); // [0]=rank, [1]=total
+                    long sid = SubjectRepository.ensurePlayer(player.getUniqueId(), player.getName());
+                    int pointTypeId = PointTypeDao.ensurePointType(PointList.EVENT_POINT.getName());
+                    int[] rt = RankingDao.myRankAndTotal(sid, pointTypeId); // [0]=rank, [1]=total
                     final int rank = rt[0];
                     final int total = rt[1];
 
@@ -105,9 +95,9 @@ public class RankingSystem {
         Bukkit.getScheduler().runTaskAsynchronously(Pointed.getInstance(), new Runnable() {
             @Override public void run() {
                 try {
-                    long sid = subjectRepo.ensurePlayer(onlinePlayer.getUniqueId(), onlinePlayer.getName());
-                    int pointTypeId = pointTypeDao.ensurePointType(PointList.EVENT_POINT.getName());
-                    final int[] rt = rankingDao.myRankAndTotal(sid, pointTypeId);
+                    long sid = SubjectRepository.ensurePlayer(onlinePlayer.getUniqueId(), onlinePlayer.getName());
+                    int pointTypeId = PointTypeDao.ensurePointType(PointList.EVENT_POINT.getName());
+                    final int[] rt = RankingDao.myRankAndTotal(sid, pointTypeId);
                     final int myRank = rt[0];
                     final int myTotal = rt[1];
 

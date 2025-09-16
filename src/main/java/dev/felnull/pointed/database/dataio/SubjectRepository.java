@@ -1,5 +1,6 @@
 package dev.felnull.pointed.database.dataio;
 
+import dev.felnull.pointed.database.Db;
 import dev.felnull.pointed.util.Util;
 
 import javax.sql.DataSource;
@@ -10,12 +11,11 @@ import java.util.UUID;
 （プレイヤー/チーム → subject_id 解決）
  */
 public class SubjectRepository {
-    private final DataSource ds;
 
-    public SubjectRepository(DataSource ds) { this.ds = ds; }
+    public SubjectRepository() {}
 
-    public long ensurePlayer(UUID uuid, String displayName) throws SQLException {
-        try (Connection con = ds.getConnection()) {
+    public static long ensurePlayer(UUID uuid, String displayName) throws SQLException {
+        try (Connection con = Db.get().getConnection()) {
             // 既存
             try (PreparedStatement ps = con.prepareStatement("SELECT id FROM subjects WHERE player_uuid=?")) {
                 ps.setBytes(1, Util.uuidToBytes(uuid));
@@ -35,8 +35,8 @@ public class SubjectRepository {
         }
     }
 
-    public long ensureTeam(String teamKey, String displayName) throws SQLException {
-        try (Connection con = ds.getConnection()) {
+    public static long ensureTeam(String teamKey, String displayName) throws SQLException {
+        try (Connection con = Db.get().getConnection()) {
             try (PreparedStatement ps = con.prepareStatement("SELECT id FROM subjects WHERE team_key=?")) {
                 ps.setString(1, teamKey);
                 try (ResultSet rs = ps.executeQuery()) {

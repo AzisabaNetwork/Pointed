@@ -9,9 +9,8 @@ import java.sql.*;
 （Point名 → Subject_id解決）
  */
 public class PointTypeDao {
-    private final DataSource ds;
 
-    public PointTypeDao(DataSource ds) { this.ds = ds; }
+    public PointTypeDao() { }
 
     public static int ensurePointType(String name) throws SQLException {
         try (Connection con = Db.get().getConnection()) {

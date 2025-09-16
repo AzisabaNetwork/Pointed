@@ -179,4 +179,20 @@ public class RewardDao {
             ps.executeUpdate();
         }
     }
+
+    /** 残高が十分なときだけ減算する（行が無い or 不足なら false） */
+    public static boolean consumeIfEnoughTx(Connection con, long subjectId, int pointTypeId, int consume) throws SQLException {
+        String sql =
+                "UPDATE subject_points " +
+                        "SET held = held - ? " +
+                        "WHERE subject_id=? AND point_type=? AND held >= ?";
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, consume);
+            ps.setLong(2, subjectId);
+            ps.setInt(3, pointTypeId);
+            ps.setInt(4, consume);
+            int updated = ps.executeUpdate();
+            return updated > 0;
+        }
+    }
 }

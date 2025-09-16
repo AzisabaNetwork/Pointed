@@ -1,5 +1,7 @@
 package dev.felnull.pointed.database.dataio;
 
+import dev.felnull.pointed.database.Db;
+
 import javax.sql.DataSource;
 import java.nio.ByteBuffer;
 import java.sql.Connection;
@@ -13,11 +15,11 @@ import java.util.UUID;
 
 
 public class RankingDao {
-    private final DataSource ds;
-    public RankingDao(DataSource ds) { this.ds = ds; }
+
+    public RankingDao() {  }
 
     /** 上位N人を total DESC で取得 */
-    public List<RankingEntry> topNByTotal(int pointTypeId, int limit) throws SQLException {
+    public static List<RankingEntry> topNByTotal(int pointTypeId, int limit) throws SQLException {
         String sql = """
             SELECT s.id, s.player_uuid, COALESCE(s.name,'unknown') AS name,
                    sp.held, sp.total
@@ -27,7 +29,7 @@ public class RankingDao {
             ORDER BY sp.total DESC, sp.updated_at DESC, s.id ASC
             LIMIT ?
         """;
-        try (Connection con = ds.getConnection();
+        try (Connection con = Db.get().getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, pointTypeId);
             ps.setInt(2, limit);
@@ -47,8 +49,8 @@ public class RankingDao {
     }
 
     /** 自分の順位と累計を返す [0]=rank, [1]=total */
-    public int[] myRankAndTotal(long subjectId, int pointTypeId) throws SQLException {
-        try (Connection con = ds.getConnection()) {
+    public static int[] myRankAndTotal(long subjectId, int pointTypeId) throws SQLException {
+        try (Connection con = Db.get().getConnection()) {
             int myTotal = 0;
             try (PreparedStatement ps = con.prepareStatement(
                     "SELECT total FROM subject_points WHERE subject_id=? AND point_type=?")) {
