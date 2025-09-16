@@ -10,6 +10,8 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
 
+import java.sql.SQLException;
+
 public class Complete extends GUIItem {
     RewardData rewardData;
     public Complete(InventoryGUI gui, RewardData rewardData) {
@@ -33,11 +35,15 @@ public class Complete extends GUIItem {
         }
 
 
-        if(RewardDao.saveReward(rewardData)){
-            p.sendMessage("リワードデータを正常に保存しました");
-            gui.currentPage.close();
-        }else {
-            p.sendMessage("リワードデータが正常に保存されませんでしたもう一度行うまたは異常がないかを確認してください");
+        try {
+            if(RewardDao.saveReward(rewardData.toRow())){
+                p.sendMessage("リワードデータを正常に保存しました");
+                gui.currentPage.close();
+            }else {
+                p.sendMessage("リワードデータが正常に保存されませんでしたもう一度行うまたは異常がないかを確認してください");
+            }
+        } catch (SQLException ex) {
+            throw new RuntimeException(ex);
         }
 
     }

@@ -2,5 +2,6 @@ CanUseRewardPage: false
 isLobby: false
 ranking: false
 ViewPoint:
-  - EVENT_POINT
-  - PLAYER_POINT
+  - "EVENT_POINT"
+  - "PLAYER_POINT"
+ViewRanking: "PLAYER_POINT"

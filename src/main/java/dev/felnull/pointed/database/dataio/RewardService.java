@@ -11,7 +11,6 @@ import java.util.List;
 
 public class RewardService {
     private final DataSource ds;
-    private final RewardDao rewardDao;
 
     public interface RewardDelivery {
         void deliverToSubject(long subjectId, SubjectType type, List<ItemStack> items);
@@ -21,7 +20,6 @@ public class RewardService {
 
     public RewardService(DataSource ds, RewardDelivery delivery) {
         this.ds = ds;
-        this.rewardDao = new RewardDao();
         this.delivery = delivery;
     }
 

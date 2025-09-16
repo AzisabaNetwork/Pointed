@@ -38,7 +38,7 @@ public class RewardSettingsGUI extends PointedGUIPage {
         setItem(14,new SetNeedMinPoint(gui,rewardData));
         setItem(15,new ChangeRepeatable(gui,rewardData));
         setItem(51,new OpenSetRewardItem(gui,rewardData));
-        setItem(52,new Back(gui,rewardData));
+        setItem(52,new Back(gui));
         setItem(53,new Complete(gui,rewardData));
     }
 

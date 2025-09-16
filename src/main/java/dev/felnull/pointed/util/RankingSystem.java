@@ -7,6 +7,7 @@ import dev.felnull.pointed.database.dataio.PointTypeDao;
 import dev.felnull.pointed.database.dataio.RankingDao;
 import dev.felnull.pointed.database.dataio.RankingEntry;
 import dev.felnull.pointed.database.dataio.SubjectRepository;
+import dev.felnull.pointed.fileio.ConfigList;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.OfflinePlayer;
@@ -54,14 +55,14 @@ public class RankingSystem {
             @Override public void run() {
                 try {
                     long sid = SubjectRepository.ensurePlayer(player.getUniqueId(), player.getName());
-                    int pointTypeId = PointTypeDao.ensurePointType(PointList.EVENT_POINT.getName());
+                    int pointTypeId = PointTypeDao.ensurePointType(Pointed.getInstance().getConfig().getString(ConfigList.VIEW_RANKING.configName));
                     int[] rt = RankingDao.myRankAndTotal(sid, pointTypeId); // [0]=rank, [1]=total
                     final int rank = rt[0];
                     final int total = rt[1];
 
                     Bukkit.getScheduler().runTask(Pointed.getInstance(), new Runnable() {
                         @Override public void run() {
-                            player.sendMessage("現在の順位: " + rank + " 累計戦果: " + total);
+                            player.sendMessage("現在の順位: " + rank + " 累計ポイント: " + total);
                             player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&f&l---------------------------"));
                         }
                     });
@@ -81,13 +82,13 @@ public class RankingSystem {
             return;
         }
 
-        onlinePlayer.sendMessage(cc("&f&l--------[&b&l戦果ランキング&f&l]--------"));
+        onlinePlayer.sendMessage(cc("&f&l--------[&b&l" + Pointed.getInstance().getConfig().getString(ConfigList.VIEW_RANKING.configName) + "ランキング&f&l]--------"));
 
         int rank = 1;
         for (RankingEntry e : allPlayerDataCache) {
             if (rank > TOP_LIMIT) break; // 上位10まで
             String name = e.name() != null ? e.name() : resolveName(e.playerUuid());
-            onlinePlayer.sendMessage(String.format("第%d位: %-12s- 累計戦果数:%-3d", rank, name, e.total()));
+            onlinePlayer.sendMessage(String.format("第%d位: %-12s- 累計ポイント数:%-3d", rank, name, e.total()));
             rank++;
         }
 
@@ -104,7 +105,7 @@ public class RankingSystem {
                     Bukkit.getScheduler().runTask(Pointed.getInstance(), new Runnable() {
                         @Override public void run() {
                             onlinePlayer.sendMessage(cc("&f&l---------------------------"));
-                            onlinePlayer.sendMessage(String.format("第%d位: %-12s- 累計戦果数:%-3d",
+                            onlinePlayer.sendMessage(String.format("第%d位: %-12s- 累計ポイント数:%-3d",
                                     myRank, onlinePlayer.getName(), myTotal));
                             onlinePlayer.sendMessage(cc("&f&l---------------------------"));
                             if (allPlayerDataSetTime != null) {
@@ -129,12 +130,12 @@ public class RankingSystem {
             return;
         }
 
-        Bukkit.broadcastMessage(cc("&f&l--------[&b&l戦果ランキング&f&l]--------"));
+        Bukkit.broadcastMessage(cc("&f&l--------[&b&l" + Pointed.getInstance().getConfig().getString(ConfigList.VIEW_RANKING.configName) + "ランキング&f&l]--------"));
         int rank = 1;
         for (RankingEntry e : allPlayerDataCache) {
             if (rank > TOP_LIMIT) break;
             String name = e.name() != null ? e.name() : resolveName(e.playerUuid());
-            Bukkit.broadcastMessage(String.format("第%d位: %-12s- 累計戦果数:%-3d", rank, name, e.total()));
+            Bukkit.broadcastMessage(String.format("第%d位: %-12s- 累計ポイント数:%-3d", rank, name, e.total()));
             rank++;
         }
         Bukkit.broadcastMessage(cc("&f&l---------------------------"));
