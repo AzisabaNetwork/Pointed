@@ -1,23 +1,18 @@
 package dev.felnull.pointed;
 
 import dev.felnull.pointed.commands.*;
-import dev.felnull.pointed.data.PlayerPointData;
 import dev.felnull.pointed.fileio.ConfigList;
 import dev.felnull.pointed.listener.ChatListener;
-import dev.felnull.pointed.listener.CommonListener;
 import dev.felnull.pointed.task.ClockMachine;
 import dev.felnull.pointed.util.ChatReader;
 import dev.felnull.pointed.util.RankingSystem;
 import lombok.Getter;
 import org.bukkit.Bukkit;
-import org.bukkit.OfflinePlayer;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public final class Pointed extends JavaPlugin {
 
@@ -25,7 +20,7 @@ public final class Pointed extends JavaPlugin {
     public static Pointed instance;
     @Getter
     public ChatReader chatReader;
-    public Map<OfflinePlayer, PlayerPointData> playerPlayerPointDataCache = new HashMap<>();
+    //public Map<OfflinePlayer, PlayerPointData> playerPlayerPointDataCache = new HashMap<>();
     public static boolean canUseRewardPage;
     public static boolean isLobby;
     public static boolean ranking;
@@ -57,7 +52,6 @@ public final class Pointed extends JavaPlugin {
     }
     public void setupListener(){
         Bukkit.getPluginManager().registerEvents(new ChatListener(this), this);
-        Bukkit.getPluginManager().registerEvents(new CommonListener(),this);
     }
     public void setupPlugin(){
         canUseRewardPage = getConfig().getBoolean(ConfigList.CANUSEREWARDPAGE.configName, false);

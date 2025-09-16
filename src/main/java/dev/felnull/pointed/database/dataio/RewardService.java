@@ -31,17 +31,17 @@ public class RewardService {
             con.setAutoCommit(false);
             try {
                 // 1) 報酬本体
-                RewardDao.RewardRow r = rewardDao.getRewardForUpdate(con, rewardId);
+                RewardDao.RewardRow r = RewardDao.getRewardForUpdate(con, rewardId);
                 if (r == null || !r.active) throw new IllegalStateException("Reward not found or inactive");
 
                 // 2) repeatableチェック
-                int obtained = rewardDao.getSubjectRewardObtainedForUpdate(con, subjectId, rewardId);
+                int obtained = RewardDao.getSubjectRewardObtainedForUpdate(con, subjectId, rewardId);
                 if (!r.repeatable && obtained >= 1) {
                     throw new IllegalStateException("Already claimed");
                 }
 
                 // 3) 前提ANDチェック
-                List<RewardDao.PrereqRow> prereqs = rewardDao.getPrereqsForUpdate(con, rewardId, subjectId);
+                List<RewardDao.PrereqRow> prereqs = RewardDao.getPrereqsForUpdate(con, rewardId, subjectId);
                 if (!prereqs.isEmpty()) {
                     try (PreparedStatement ps = con.prepareStatement(
                             "SELECT reward_id, obtained FROM subject_rewards WHERE subject_id=? AND reward_id=? FOR UPDATE")) {
@@ -60,22 +60,22 @@ public class RewardService {
                 }
 
                 // 4) 残高/累計チェック
-                int[] ht = rewardDao.getHeldTotalForUpdate(con, subjectId, r.pointTypeId);
+                int[] ht = RewardDao.getHeldTotalForUpdate(con, subjectId, r.pointTypeId);
                 int held = ht[0], total = ht[1];
                 if (total < r.needMinTotal) throw new IllegalStateException("Not enough total");
                 if (held  < r.needPoint)    throw new IllegalStateException("Not enough held");
 
                 // 5) 消費
                 if (r.needPoint > 0) {
-                    rewardDao.consumeHeld(con, subjectId, r.pointTypeId, r.needPoint);
-                    rewardDao.logLedger(con, subjectId, r.pointTypeId, -r.needPoint, "reward_claim", String.valueOf(rewardId));
+                    RewardDao.consumeHeld(con, subjectId, r.pointTypeId, r.needPoint);
+                    RewardDao.logLedger(con, subjectId, r.pointTypeId, -r.needPoint, "reward_claim", String.valueOf(rewardId));
                 }
 
                 // 6) 受取回数 +1
-                rewardDao.incrementSubjectReward(con, subjectId, rewardId);
+                RewardDao.incrementSubjectReward(con, subjectId, rewardId);
 
                 // 7) アイテムをロード
-                List<ItemStack> items = rewardDao.loadRewardItems(con, rewardId);
+                List<ItemStack> items = RewardDao.loadRewardItems(con, rewardId);
 
                 con.commit();
 

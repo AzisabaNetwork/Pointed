@@ -5,9 +5,11 @@ import dev.felnull.pointed.PointList;
 import dev.felnull.pointed.Pointed;
 import dev.felnull.pointed.data.PlayerPointData;
 import dev.felnull.pointed.data.RewardData;
+import dev.felnull.pointed.database.dataio.PointTypeDao;
+import dev.felnull.pointed.database.dataio.RewardDao;
+import dev.felnull.pointed.database.dataio.SubjectPointsDao;
+import dev.felnull.pointed.database.dataio.SubjectRepository;
 import dev.felnull.pointed.fileio.ConfigList;
-import dev.felnull.pointed.fileio.PlayerPointDataIO;
-import dev.felnull.pointed.fileio.RewardDataIO;
 import dev.felnull.pointed.gui.page.RewardSettingsGUI;
 import dev.felnull.pointed.task.ClockMachine;
 import dev.felnull.pointed.util.PointedUtilities;
@@ -24,6 +26,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import org.jetbrains.annotations.NotNull;
 
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -54,23 +57,16 @@ public class MainPointedCommand implements CommandExecutor {
                     try{
                         rewardID = Integer.parseInt(args[1].replaceAll("[^0-9]", ""));
                     } catch (NumberFormatException e) {
-                        sender.sendMessage("数字を入力してください!!");
+                        sender.sendMessage("RewardID(数字)を入力してください!!");
                         break;
                     }
-
-                    List<RewardData> rewardDataList = RewardDataIO.loadRewards();
-                    for(RewardData rewardData : rewardDataList){
-                        if(rewardData.rewardID == rewardID){
-                            gui.openPage(new RewardSettingsGUI(gui, rewardData));
-                            break;
-                        }
-                    }
+                    gui.openPage(new RewardSettingsGUI(gui));
                 }
                 break;
             case "point":
                 if(args.length == 1) {
                     sender.sendMessage("プレイヤー名を指定してください");
-                }else if (args.length == 4) {
+                }else if (args.length == 5) {
                     Player player = Bukkit.getPlayer(args[1]);
                     OfflinePlayer offlinePlayer;
                     if(player == null){
@@ -81,29 +77,51 @@ public class MainPointedCommand implements CommandExecutor {
                     }else {
                         offlinePlayer = player;
                     }
-                    PlayerPointData playerPointData = PlayerPointDataIO.loadPlayerPointData(offlinePlayer);
                     Integer number = PointedUtilities.formStringToInt(args[3]);
                     if(number == null) {
-                        number = 0;
+                        number = (Integer) 0;
                     }
-                    switch (args[2]){
+                    long subjectId;
+                    int pointTypeId;
+                    try {
+                        subjectId = SubjectRepository.ensurePlayer(offlinePlayer.getUniqueId(),offlinePlayer.getName());
+                        pointTypeId = PointTypeDao.ensurePointType(args[4]);
+                    } catch (SQLException e) {
+                        throw new RuntimeException(e);
+                    }
+                    String reason = "COMMAND";
+                    String refId = "Pointed-";
+                     switch (args[2]){
                         case "add":
-                            playerPointData.addPoint(PointList.EVENT_POINT.getName(), number);
-                            sender.sendMessage(offlinePlayer.getName() + "のポイントを" + number + "追加しました");
+                            try {
+                                SubjectPointsDao.addPoints(subjectId, pointTypeId, number, reason, refId + "ADD");
+                                sender.sendMessage("[" + args[4] + "] " + offlinePlayer.getName() + "の" + "ポイントを" + number + "追加しました");
+                            } catch (SQLException e) {
+                                throw new RuntimeException(e);
+                            }
+
                             break;
                         case "subtract":
-                            playerPointData.subtractPoint(PointList.EVENT_POINT.getName(), number);
-                            sender.sendMessage(offlinePlayer.getName() + "のポイントを" + number + "削除しました");
+                            try {
+                                SubjectPointsDao.subtractPoints(subjectId, pointTypeId, number, reason, refId + "SUBTRACT");
+                                sender.sendMessage("[" + args[4] + "] " + offlinePlayer.getName() + "の" + "ポイントを" + number + "減算しました");
+                            } catch (SQLException e) {
+                                throw new RuntimeException(e);
+                            }
+
                             break;
                         case "set":
-                            playerPointData.setPoint(PointList.EVENT_POINT.getName(), number);
-                            sender.sendMessage(offlinePlayer.getName() + "のポイントを" + number + "に設定しました");
+                            try {
+                                SubjectPointsDao.upsertExactWithLedger(subjectId, pointTypeId, number, reason, refId + "SET");
+                                sender.sendMessage("[" + args[4] + "] " + offlinePlayer.getName() + "の" + "ポイントを" + number + "に設定しました");
+                            } catch (SQLException e) {
+                                throw new RuntimeException(e);
+                            }
                             break;
                         default:
                             sender.sendMessage("add,subtract,setのどれかを選んでください");
                             break;
                     }
-                    PlayerPointDataIO.savePlayerPointData(playerPointData);
 
                 }else {
                     sender.sendMessage("{/pointed point プレイヤー名 [add,subtract,set] 数字}で入力してください");
@@ -145,6 +163,7 @@ public class MainPointedCommand implements CommandExecutor {
                 config.set(ConfigList.RANKING.configName, useRanking);
                 Pointed.getInstance().saveConfig();
                 break;
+                /*
             case "reset":
                 if(areYouSure.containsKey(sender)){
                     if(areYouSure.get(sender)){
@@ -165,6 +184,7 @@ public class MainPointedCommand implements CommandExecutor {
                     }
                 }.runTaskLater(Pointed.instance, 20L * 10);
                 break;
+                 */
         }
 
 

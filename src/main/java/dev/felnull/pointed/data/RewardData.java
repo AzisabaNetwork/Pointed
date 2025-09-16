@@ -50,8 +50,8 @@ public class RewardData implements Comparable<RewardData> {
         this.active = active;
     }
 
-    public RewardData(int rewardID, String displayName, String pointTypeName,
-                      int needPoint, int needMinPoint, boolean repeatable,
+    public RewardData(Integer rewardID, String displayName, String pointTypeName,
+                      Integer needPoint, Integer needMinPoint, boolean repeatable,
                       boolean active, List<ItemStack> rewardList) {
         this.rewardID = rewardID;
         this.displayName = displayName;
@@ -93,8 +93,8 @@ public class RewardData implements Comparable<RewardData> {
         row.id = this.rewardID;
         row.displayName = this.displayName;
         row.pointTypeId = PointTypeDao.ensurePointType(this.pointTypeName); // 名前からIDを解決
-        row.needPoint = this.needPoint != null ? this.needPoint : 0;
-        row.needMinTotal = this.needMinPoint != null ? this.needMinPoint : 0;
+        row.needPoint = this.needPoint != null ? this.needPoint : (Integer) 0;
+        row.needMinTotal = this.needMinPoint != null ? this.needMinPoint : (Integer) 0;
         row.repeatable = this.repeatable;
         row.active = this.active;
         return row;

@@ -18,7 +18,7 @@ public class RewardSettingsGUI extends PointedGUIPage {
     List<ItemStack> itemList;
     public RewardSettingsGUI(InventoryGUI gui) {
         super(gui, ChatColor.translateAlternateColorCodes('&', "&a[Pointed]&6&lRewardSettings"), 6*9);
-        this.rewardData = new RewardData(null, null, null, null, false);
+        this.rewardData = new RewardData(null, null, null, null,null , false, false);
     }
     public RewardSettingsGUI(InventoryGUI gui, RewardData rewardData) {
         super(gui, ChatColor.translateAlternateColorCodes('&', "&a[Pointed]&6&lRewardSettings"), 6*9);

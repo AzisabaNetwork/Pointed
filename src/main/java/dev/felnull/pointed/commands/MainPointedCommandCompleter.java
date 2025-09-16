@@ -1,7 +1,7 @@
 package dev.felnull.pointed.commands;
 
 import dev.felnull.pointed.data.RewardData;
-import dev.felnull.pointed.fileio.RewardDataIO;
+import dev.felnull.pointed.database.dataio.RewardDao;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -22,13 +22,9 @@ public class MainPointedCommandCompleter implements TabCompleter {
             if(args.length == 1){
                 suggestions = Arrays.asList("create", "point", "toggle", "toggleRanking", "reset");
             }
-            if(args.length == 2){
+            if(args.length == 3){
                 switch (args[0]){
                     case "create":
-                        List<RewardData> rewardDataList = RewardDataIO.loadRewards();
-                        for(RewardData rewardData : rewardDataList) {
-                            suggestions.add(String.valueOf(rewardData.rewardID));
-                        }
                         break;
                     case "point":
                         for(Player player : Bukkit.getOnlinePlayers()){
@@ -37,7 +33,7 @@ public class MainPointedCommandCompleter implements TabCompleter {
                         break;
                 }
             }
-            if(args.length == 3){
+            if(args.length == 4){
                 switch (args[0]){
                     case "point":
                         suggestions = Arrays.asList("add", "subtract", "set");

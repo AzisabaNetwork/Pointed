@@ -19,11 +19,11 @@ public class RewardDao {
 
     /** rewards テーブルの1行 */
     public static class RewardRow {
-        public int id;
+        public Integer id;
         public String displayName;
         public int pointTypeId;
-        public int needPoint;
-        public int needMinTotal;
+        public Integer needPoint;
+        public Integer needMinTotal;
         public boolean repeatable;
         public boolean active;
     }
@@ -84,11 +84,11 @@ public class RewardDao {
             try (ResultSet rs = ps.executeQuery()) {
                 if (!rs.next()) return null;
                 RewardRow r = new RewardRow();
-                r.id = rs.getInt(1);
+                r.id = (Integer) rs.getInt(1);
                 r.displayName = rs.getString(2);
                 r.pointTypeId = rs.getInt(3);
-                r.needPoint = rs.getInt(4);
-                r.needMinTotal = rs.getInt(5);
+                r.needPoint = (Integer) rs.getInt(4);
+                r.needMinTotal = (Integer) rs.getInt(5);
                 r.repeatable = rs.getBoolean(6);
                 r.active = rs.getBoolean(7);
                 return r;
@@ -129,7 +129,7 @@ public class RewardDao {
     }
 
     /**
-     * subject_rewards をロックして現在の obtained を取得。
+     * subject_rewards をロックして現在の obtained(受け取った回数) を取得。
      */
     public static int getSubjectRewardObtainedForUpdate(Connection con, long subjectId, int rewardId) throws SQLException {
         try (PreparedStatement ps = con.prepareStatement(
@@ -246,5 +246,170 @@ public class RewardDao {
             int updated = ps.executeUpdate();
             return updated > 0;
         }
+    }
+
+    public static List<RewardDao.RewardRow> listByPointTypeId(int pointTypeId, boolean onlyActive) throws SQLException {
+        String sql =
+                "SELECT id, display_name, point_type, need_point, need_min_total, repeatable, active " +
+                        "FROM rewards WHERE point_type=? " + (onlyActive ? "AND active=1 " : "") +
+                        "ORDER BY need_point ASC, id ASC";
+
+        List<RewardDao.RewardRow> out = new ArrayList<RewardDao.RewardRow>();
+        try (Connection con = Db.get().getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, pointTypeId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    RewardDao.RewardRow r = new RewardDao.RewardRow();
+                    r.id           = (Integer) rs.getInt(1);
+                    r.displayName  = rs.getString(2);
+                    r.pointTypeId  = rs.getInt(3);
+                    r.needPoint    = (Integer) rs.getInt(4);
+                    r.needMinTotal = (Integer) rs.getInt(5);
+                    r.repeatable   = rs.getBoolean(6);
+                    r.active       = rs.getBoolean(7);
+                    out.add(r);
+                }
+            }
+        }
+        return out;
+    }
+
+    /** 一覧取得のオプション */
+    public static class ListOpts {
+        /** どちらか片方を指定（優先: pointTypeId） */
+        public Integer pointTypeId;      // 例: 1
+        public String  pointTypeName;    // 例: "EVENT_POINT"
+
+        /** 有効なものだけに絞る（デフォルト false） */
+        public boolean onlyActive = false;
+
+        /** ページング：limit 未指定なら全件、offset デフォルト 0 */
+        public Integer limit;            // 例: 20
+        public Integer offset = (Integer) 0;
+
+        /** RewardData 生成時にアイテムも読み込むか */
+        public boolean includeItems = true;
+    }
+
+    /** 生の RewardRow 一覧（軽量） */
+    public static List<RewardRow> listRows(ListOpts opts) throws SQLException {
+        if (opts == null) throw new IllegalArgumentException("opts is null");
+        StringBuilder sql = new StringBuilder();
+        List<Object> params = new ArrayList<Object>();
+
+        // pointTypeName 指定なら JOIN、Id 指定なら単純 WHERE
+        if (opts.pointTypeId != null) {
+            sql.append("SELECT id, display_name, point_type, need_point, need_min_total, repeatable, active ")
+                    .append("FROM rewards WHERE point_type=? ");
+            params.add(opts.pointTypeId);
+            if (opts.onlyActive) sql.append("AND active=1 ");
+        } else if (opts.pointTypeName != null) {
+            sql.append("SELECT r.id, r.display_name, r.point_type, r.need_point, r.need_min_total, r.repeatable, r.active ")
+                    .append("FROM rewards r JOIN point_types pt ON pt.id = r.point_type ")
+                    .append("WHERE pt.name=? ");
+            params.add(opts.pointTypeName);
+            if (opts.onlyActive) sql.append("AND r.active=1 ");
+        } else {
+            throw new IllegalArgumentException("pointTypeId or pointTypeName is required");
+        }
+
+        sql.append("ORDER BY need_point ASC, id ASC ");
+        if (opts.limit != null) {
+            sql.append("LIMIT ? OFFSET ? ");
+            params.add(opts.limit);
+            params.add(opts.offset);
+        }
+
+        List<RewardRow> out = new ArrayList<RewardRow>();
+        try (Connection con = Db.get().getConnection();
+             PreparedStatement ps = prepare(con, sql.toString(), params)) {
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    RewardRow r = new RewardRow();
+                    r.id           = (Integer) rs.getInt(1);
+                    r.displayName  = rs.getString(2);
+                    r.pointTypeId  = rs.getInt(3);
+                    r.needPoint    = (Integer) rs.getInt(4);
+                    r.needMinTotal = (Integer) rs.getInt(5);
+                    r.repeatable   = rs.getBoolean(6);
+                    r.active       = rs.getBoolean(7);
+                    out.add(r);
+                }
+            }
+        }
+        return out;
+    }
+
+    /** GUI向け：RewardData にして返す（必要ならアイテムも同時ロード） */
+    public static List<RewardData> listData(ListOpts opts) throws SQLException {
+        List<RewardRow> rows = listRows(opts);
+        String pointTypeNameForData = opts.pointTypeName;
+
+        List<RewardData> out = new ArrayList<RewardData>();
+        try (Connection con = Db.get().getConnection()) {
+            for (RewardRow r : rows) {
+                List<ItemStack> items = new ArrayList<ItemStack>();
+                if (opts.includeItems) {
+                    try {
+                        items = loadRewardItems(con, r.id); // 既存メソッド
+                    } catch (Exception ignore) {
+                        items = new ArrayList<ItemStack>();
+                    }
+                }
+                RewardData d = new RewardData(
+                        r.id,
+                        r.displayName,
+                        pointTypeNameForData, // あればセット
+                        r.needPoint,
+                        r.needMinTotal,
+                        r.repeatable,
+                        r.active,
+                        items
+                );
+                out.add(d);
+            }
+        }
+        return out;
+    }
+
+    /** 総件数（ページングUI用） */
+    public static int count(ListOpts opts) throws SQLException {
+        if (opts == null) throw new IllegalArgumentException("opts is null");
+        StringBuilder sql = new StringBuilder();
+        List<Object> params = new ArrayList<Object>();
+
+        if (opts.pointTypeId != null) {
+            sql.append("SELECT COUNT(*) FROM rewards WHERE point_type=? ");
+            params.add(opts.pointTypeId);
+            if (opts.onlyActive) sql.append("AND active=1 ");
+        } else if (opts.pointTypeName != null) {
+            sql.append("SELECT COUNT(*) FROM rewards r JOIN point_types pt ON pt.id=r.point_type WHERE pt.name=? ");
+            params.add(opts.pointTypeName);
+            if (opts.onlyActive) sql.append("AND r.active=1 ");
+        } else {
+            throw new IllegalArgumentException("pointTypeId or pointTypeName is required");
+        }
+
+        try (Connection con = Db.get().getConnection();
+             PreparedStatement ps = prepare(con, sql.toString(), params);
+             ResultSet rs = ps.executeQuery()) {
+            rs.next();
+            return rs.getInt(1);
+        }
+    }
+
+    // ---- 小さなユーティリティ ----
+    private static PreparedStatement prepare(Connection con, String sql, List<Object> params) throws SQLException {
+        PreparedStatement ps = con.prepareStatement(sql);
+        for (int i = 0; i < params.size(); i++) {
+            Object v = params.get(i);
+            int idx = i + 1;
+            if (v instanceof Integer)      ps.setInt(idx, ((Integer) v).intValue());
+            else if (v instanceof Long)    ps.setLong(idx, ((Long) v).longValue());
+            else if (v instanceof String)  ps.setString(idx, (String) v);
+            else                           ps.setObject(idx, v);
+        }
+        return ps;
     }
 }
