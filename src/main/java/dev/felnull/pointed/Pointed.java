@@ -1,16 +1,18 @@
 package dev.felnull.pointed;
 
 import dev.felnull.pointed.commands.*;
-import dev.felnull.pointed.fileio.ConfigList;
+import dev.felnull.pointed.database.Db;
+import dev.felnull.pointed.database.TableInitializer;
+import dev.felnull.pointed.database.api.PointServiceImpl;
 import dev.felnull.pointed.listener.ChatListener;
-import dev.felnull.pointed.task.ClockMachine;
 import dev.felnull.pointed.util.ChatReader;
-import dev.felnull.pointed.util.RankingSystem;
 import lombok.Getter;
 import org.bukkit.Bukkit;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,45 +22,38 @@ public final class Pointed extends JavaPlugin {
     public static Pointed instance;
     @Getter
     public ChatReader chatReader;
-    //public Map<OfflinePlayer, PlayerPointData> playerPlayerPointDataCache = new HashMap<>();
-    public static boolean canUseRewardPage;
-    public static boolean isLobby;
-    public static boolean ranking;
     public static List<BukkitTask> taskList = new ArrayList<>();
+    ZoneId zoneId = ZoneId.of(getConfig().getString("timezone", "Asia/Tokyo"));
 
     @Override
     public void onEnable() {
         instance = this;
+        FileConfiguration conf = getConfig();
+        Db.init(conf.getString("database.host"), conf.getInt("database.port"), conf.getString("database.database"), conf.getString("database.user"), conf.getString("database.pass"));
         this.chatReader = new ChatReader();
         Bukkit.getLogger().info("Pointedが動作を開始しました");
         setupCommand();
         setupListener();
         saveDefaultConfig();
         setupPlugin();
-
+        TableInitializer.initTables();
     }
 
     @Override
     public void onDisable() {
-        // Plugin shutdown logic
+        for(BukkitTask task : taskList){
+            task.cancel();
+        }
+        Db.close();
     }
 
     public void setupCommand(){
-        getCommand("pointed").setExecutor(new MainPointedCommand());
-        getCommand("pointed").setTabCompleter(new MainPointedCommandCompleter());
-        getCommand("ptreward").setExecutor(new OpenReward());
-        getCommand("mypoint").setExecutor(new MyPoint());
-        getCommand("ranking").setExecutor(new RankingCommand());
+        getCommand("pt").setExecutor(new PtCommand(new PointServiceImpl(Db.get(), zoneId), this, zoneId) {
+        });
     }
     public void setupListener(){
         Bukkit.getPluginManager().registerEvents(new ChatListener(this), this);
     }
     public void setupPlugin(){
-        canUseRewardPage = getConfig().getBoolean(ConfigList.CANUSEREWARDPAGE.configName, false);
-        isLobby = getConfig().getBoolean(ConfigList.ISLOBBY.configName, false);
-        ranking = getConfig().getBoolean(ConfigList.RANKING.configName, false);
-
-        RankingSystem.getRankingList(ranking -> {});
-        new ClockMachine().rankingUpdaterTaskStarter();
     }
 }

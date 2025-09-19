@@ -5,17 +5,10 @@ api-version: '1.16'
 depend:
   - BetterGUI
 commands:
-  pointed:
-    permission: pointed.command.admin
-    aliases: [ptd]
-  ptreward:
-    aliases: [ptr]
-  mypoint:
-    aliases: [myp]
-  ranking:
-    aliases: [ ranking ]
+  pt:
+    permission: pointed.admin
+    description: Pointed commands
+    usage: "/pt <getnow|gettotal|get|add|sub|set|rank>"
 permissions:
-  pointed.command.admin:
+  pointed.admin:
     default: op
-  pointed.command.player:
-    default: true

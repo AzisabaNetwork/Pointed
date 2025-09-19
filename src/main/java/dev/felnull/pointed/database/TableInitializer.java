@@ -15,24 +15,32 @@ public final class TableInitializer {
              Statement stmt = conn.createStatement()) {
 
             // ========== 1) 骨格だけCREATE（最小列） ==========
+
             // subjects
             stmt.executeUpdate("CREATE TABLE IF NOT EXISTS subjects (" +
                     " id BIGINT AUTO_INCREMENT PRIMARY KEY" +
                     ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
-            // point_types
-            stmt.executeUpdate("CREATE TABLE IF NOT EXISTS point_types (" +
-                    " id INT AUTO_INCREMENT PRIMARY KEY" +
+            // accounts
+            stmt.executeUpdate("CREATE TABLE IF NOT EXISTS accounts (" +
+                    " id BIGINT AUTO_INCREMENT PRIMARY KEY" +
                     ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
-            // subject_points
-            stmt.executeUpdate("CREATE TABLE IF NOT EXISTS subject_points (" +
-                    " subject_id BIGINT NOT NULL" +
+            // account_balances
+            stmt.executeUpdate("CREATE TABLE IF NOT EXISTS account_balances (" +
+                    " account_id BIGINT PRIMARY KEY" +
+                    ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+            // account_daily
+            stmt.executeUpdate("CREATE TABLE IF NOT EXISTS account_daily (" +
+                    " account_id BIGINT NOT NULL," +
+                    " day DATE NOT NULL," +
+                    " PRIMARY KEY (account_id, day)" +
                     ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
             // rewards
             stmt.executeUpdate("CREATE TABLE IF NOT EXISTS rewards (" +
-                    " id INT PRIMARY KEY" +
+                    " id INT AUTO_INCREMENT PRIMARY KEY" +
                     ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
             // reward_items
@@ -55,31 +63,32 @@ public final class TableInitializer {
                     " id BIGINT AUTO_INCREMENT PRIMARY KEY" +
                     ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
-            // ========== 2) 不足カラムを追加-only で補完 ==========
+            // ========== 2) 不足カラムを追加 ==========
+
             // subjects
-            addColumnIfNotExists(conn, "subjects", "type",        "VARCHAR(16) NOT NULL"); // 'PLAYER' or 'TEAM'
-            addColumnIfNotExists(conn, "subjects", "name",        "VARCHAR(255)");
-            addColumnIfNotExists(conn, "subjects", "player_uuid", "BINARY(16) NULL");
-            addColumnIfNotExists(conn, "subjects", "team_key",    "VARCHAR(128) NULL");
-            addColumnIfNotExists(conn, "subjects", "created_at",  "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP");
-            addColumnIfNotExists(conn, "subjects", "updated_at",  "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
+            addColumnIfNotExists(conn, "subjects", "type",       "VARCHAR(16) NOT NULL"); // PLAYER/TEAM
+            addColumnIfNotExists(conn, "subjects", "subject_key","VARCHAR(128) NOT NULL");
+            addColumnIfNotExists(conn, "subjects", "name",       "VARCHAR(255)");
+            addColumnIfNotExists(conn, "subjects", "created_at", "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP");
+            addColumnIfNotExists(conn, "subjects", "updated_at", "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
 
-            // point_types
-            addColumnIfNotExists(conn, "point_types", "name", "VARCHAR(64) NOT NULL");
+            // accounts
+            addColumnIfNotExists(conn, "accounts", "subject_id", "BIGINT NOT NULL");
+            addColumnIfNotExists(conn, "accounts", "scope",      "VARCHAR(64) NOT NULL");
 
-            // subject_points
-            addColumnIfNotExists(conn, "subject_points", "point_type", "INT NOT NULL");
-            addColumnIfNotExists(conn, "subject_points", "held",       "INT NOT NULL DEFAULT 0");
-            addColumnIfNotExists(conn, "subject_points", "total",      "INT NOT NULL DEFAULT 0");
-            addColumnIfNotExists(conn, "subject_points", "updated_at", "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
+            // account_balances
+            addColumnIfNotExists(conn, "account_balances", "now_point",   "BIGINT NOT NULL DEFAULT 0");
+            addColumnIfNotExists(conn, "account_balances", "total_point", "BIGINT NOT NULL DEFAULT 0");
+
+            // account_daily
+            addColumnIfNotExists(conn, "account_daily", "gained", "BIGINT NOT NULL DEFAULT 0");
 
             // rewards
             addColumnIfNotExists(conn, "rewards", "display_name",  "VARCHAR(255) NOT NULL");
-            addColumnIfNotExists(conn, "rewards", "point_type",     "INT NOT NULL");
-            addColumnIfNotExists(conn, "rewards", "need_point",     "INT NOT NULL DEFAULT 0");
-            addColumnIfNotExists(conn, "rewards", "need_min_total", "INT NOT NULL DEFAULT 0");
-            addColumnIfNotExists(conn, "rewards", "repeatable",     "TINYINT(1) NOT NULL DEFAULT 0");
-            addColumnIfNotExists(conn, "rewards", "active",         "TINYINT(1) NOT NULL DEFAULT 1");
+            addColumnIfNotExists(conn, "rewards", "need_point",    "INT NOT NULL DEFAULT 0");
+            addColumnIfNotExists(conn, "rewards", "need_min_total","INT NOT NULL DEFAULT 0");
+            addColumnIfNotExists(conn, "rewards", "repeatable",    "TINYINT(1) NOT NULL DEFAULT 0");
+            addColumnIfNotExists(conn, "rewards", "active",        "TINYINT(1) NOT NULL DEFAULT 1");
 
             // reward_items
             addColumnIfNotExists(conn, "reward_items", "idx",        "INT NOT NULL");
@@ -90,59 +99,36 @@ public final class TableInitializer {
             addColumnIfNotExists(conn, "reward_prerequisites", "min_obtained",     "INT NOT NULL DEFAULT 1");
 
             // subject_rewards
-            addColumnIfNotExists(conn, "subject_rewards", "reward_id",        "INT NOT NULL");
-            addColumnIfNotExists(conn, "subject_rewards", "obtained",         "INT NOT NULL DEFAULT 0");
-            addColumnIfNotExists(conn, "subject_rewards", "last_claimed_at",  "TIMESTAMP NULL DEFAULT NULL");
+            addColumnIfNotExists(conn, "subject_rewards", "reward_id",       "INT NOT NULL");
+            addColumnIfNotExists(conn, "subject_rewards", "obtained",        "INT NOT NULL DEFAULT 0");
+            addColumnIfNotExists(conn, "subject_rewards", "last_claimed_at", "TIMESTAMP NULL DEFAULT NULL");
 
             // point_ledger
-            addColumnIfNotExists(conn, "point_ledger", "subject_id", "BIGINT NOT NULL");
-            addColumnIfNotExists(conn, "point_ledger", "point_type", "INT NOT NULL");
-            addColumnIfNotExists(conn, "point_ledger", "delta",      "INT NOT NULL");
+            addColumnIfNotExists(conn, "point_ledger", "account_id", "BIGINT NOT NULL");
+            addColumnIfNotExists(conn, "point_ledger", "delta",      "BIGINT NOT NULL");
             addColumnIfNotExists(conn, "point_ledger", "reason",     "VARCHAR(64)");
             addColumnIfNotExists(conn, "point_ledger", "ref_id",     "VARCHAR(64)");
             addColumnIfNotExists(conn, "point_ledger", "created_at", "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP");
 
-            // ========== 3) 主キー・ユニーク・インデックス ==========
-            // subjects
-            ensureUniqueIndex(conn, "subjects", "uniq_subject_player_uuid", new String[]{"player_uuid"});
-            ensureUniqueIndex(conn, "subjects", "uniq_subject_team_key",    new String[]{"team_key"});
-            ensureIndex(conn, "subjects", "idx_subject_type", new String[]{"type"});
+            // ========== 3) インデックス・制約 ==========
 
-            // point_types
-            ensureUniqueIndex(conn, "point_types", "uniq_point_types_name", new String[]{"name"});
+            ensureUniqueIndex(conn, "subjects", "uniq_subject_key", new String[]{"type","subject_key"});
 
-            // subject_points: PrimaryKey(subject_id,point_type)
-            ensurePrimaryKey(conn, "subject_points", new String[]{"subject_id","point_type"});
-            ensureIndex(conn, "subject_points", "idx_sp_updated", new String[]{"updated_at"});
+            ensureUniqueIndex(conn, "accounts", "uniq_account_scope", new String[]{"subject_id","scope"});
 
-            // rewards
-            ensureIndex(conn, "rewards", "idx_rewards_pointtype", new String[]{"point_type"});
-            ensureIndex(conn, "rewards", "idx_rewards_active",    new String[]{"active"});
-
-            // reward_items: PrimaryKey(reward_id, idx)
-            ensurePrimaryKey(conn, "reward_items", new String[]{"reward_id","idx"});
-
-            // reward_prerequisites: PrimaryKey(reward_id, prereq_reward_id)
-            ensurePrimaryKey(conn, "reward_prerequisites", new String[]{"reward_id","prereq_reward_id"});
-
-            // subject_rewards: PrimaryKey(subject_id, reward_id)
-            ensurePrimaryKey(conn, "subject_rewards", new String[]{"subject_id","reward_id"});
-            ensureIndex(conn, "subject_rewards", "idx_sr_last_claimed", new String[]{"last_claimed_at"});
-
-            // point_ledger
-            ensureIndex(conn, "point_ledger", "idx_ledger_subject",   new String[]{"subject_id"});
-            ensureIndex(conn, "point_ledger", "idx_ledger_pointtype", new String[]{"point_type"});
-            ensureIndex(conn, "point_ledger", "idx_ledger_created",   new String[]{"created_at"});
-
-            // ========== 4) 外部キー（存在しないときのみ付与） ==========
-            // 注意: 本番運用中の既存foreignKeyは壊さない方針。無ければ付与。
-            ensureForeignKey(conn, "subject_points", "fk_sp_subject",
+            ensureForeignKey(conn, "accounts", "fk_acc_subject",
                     "subject_id", "subjects", "id", "CASCADE", "CASCADE");
-            ensureForeignKey(conn, "subject_points", "fk_sp_pointtype",
-                    "point_type", "point_types", "id", "RESTRICT", "CASCADE");
 
-            ensureForeignKey(conn, "rewards", "fk_rewards_pointtype",
-                    "point_type", "point_types", "id", "RESTRICT", "CASCADE");
+            ensureForeignKey(conn, "account_balances", "fk_ab_acc",
+                    "account_id", "accounts", "id", "CASCADE", "CASCADE");
+
+            ensureForeignKey(conn, "account_daily", "fk_ad_acc",
+                    "account_id", "accounts", "id", "CASCADE", "CASCADE");
+
+            ensureForeignKey(conn, "subject_rewards", "fk_sr_subject",
+                    "subject_id", "subjects", "id", "CASCADE", "CASCADE");
+            ensureForeignKey(conn, "subject_rewards", "fk_sr_reward",
+                    "reward_id", "rewards", "id", "RESTRICT", "CASCADE");
 
             ensureForeignKey(conn, "reward_items", "fk_ri_reward",
                     "reward_id", "rewards", "id", "CASCADE", "CASCADE");
@@ -152,17 +138,10 @@ public final class TableInitializer {
             ensureForeignKey(conn, "reward_prerequisites", "fk_rp_prereq",
                     "prereq_reward_id", "rewards", "id", "RESTRICT", "CASCADE");
 
-            ensureForeignKey(conn, "subject_rewards", "fk_sr_subject",
-                    "subject_id", "subjects", "id", "CASCADE", "CASCADE");
-            ensureForeignKey(conn, "subject_rewards", "fk_sr_reward",
-                    "reward_id", "rewards", "id", "RESTRICT", "CASCADE");
+            ensureForeignKey(conn, "point_ledger", "fk_pl_acc",
+                    "account_id", "accounts", "id", "CASCADE", "CASCADE");
 
-            ensureForeignKey(conn, "point_ledger", "fk_pl_subject",
-                    "subject_id", "subjects", "id", "CASCADE", "CASCADE");
-            ensureForeignKey(conn, "point_ledger", "fk_pl_pointtype",
-                    "point_type", "point_types", "id", "RESTRICT", "CASCADE");
-
-            LOGGER.info("[Pointed] テーブル初期化（骨格→列補完→制約付与）完了！");
+            LOGGER.info("[Pointed] テーブル初期化完了！");
 
         } catch (SQLException e) {
             LOGGER.warning("[Pointed] テーブル初期化中にエラー: " + e.getMessage());
