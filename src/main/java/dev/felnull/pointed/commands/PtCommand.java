@@ -52,6 +52,11 @@ public class PtCommand implements CommandExecutor, TabCompleter {
             return true;
         }
 
+        if (!sender.hasPermission("pointed.admin")) {
+            sender.sendMessage(Util.f("&c権限がありません。"));
+            return true;
+        }
+
         String sub = args[0].toLowerCase();
         switch (sub) {
             case "getnow" -> {
