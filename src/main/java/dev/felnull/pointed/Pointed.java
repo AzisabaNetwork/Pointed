@@ -3,6 +3,7 @@ package dev.felnull.pointed;
 import dev.felnull.pointed.commands.*;
 import dev.felnull.pointed.database.Db;
 import dev.felnull.pointed.database.TableInitializer;
+import dev.felnull.pointed.database.api.Names;
 import dev.felnull.pointed.database.api.PointServiceImpl;
 import dev.felnull.pointed.listener.ChatListener;
 import dev.felnull.pointed.util.ChatReader;
@@ -29,6 +30,8 @@ public final class Pointed extends JavaPlugin {
     public void onEnable() {
         instance = this;
         FileConfiguration conf = getConfig();
+        String prefix = conf.getString("database.table_prefix", "pointed_");
+        Names.init(prefix);
         Db.init(conf.getString("database.host"), conf.getInt("database.port"), conf.getString("database.database"), conf.getString("database.user"), conf.getString("database.pass"));
         this.chatReader = new ChatReader();
         Bukkit.getLogger().info("Pointedが動作を開始しました");

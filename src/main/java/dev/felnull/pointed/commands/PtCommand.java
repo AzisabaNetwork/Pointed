@@ -64,7 +64,7 @@ public class PtCommand implements CommandExecutor, TabCompleter {
                 String subjectKey = resolveSubjectKey(type, args[2]);
                 String scope = args[3];
                 long v = svc.getNowPoint(type, subjectKey, scope);
-                sender.sendMessage(Util.f("&a現在ポイント &7({0}:{1}, {2}): &b{3}", type, subjectKey, scope, v));
+                sender.sendMessage(Util.f("&a現在ポイント &7({0}): &b{1}", scope, v));
             }
             case "gettotal" -> {
                 // /pt gettotal <type> <key|playerName|uuid> <scope>
@@ -76,7 +76,7 @@ public class PtCommand implements CommandExecutor, TabCompleter {
                 String subjectKey = resolveSubjectKey(type, args[2]);
                 String scope = args[3];
                 long v = svc.getTotalPoint(type, subjectKey, scope);
-                sender.sendMessage(Util.f("&a累計獲得ポイント &7({0}:{1}, {2}): &b{3}", type, subjectKey, scope, v));
+                sender.sendMessage(Util.f("&a累計獲得ポイント &7({0}): &b{1}", scope, v));
             }
             case "get" -> {
                 // /pt get <type> <key|playerName|uuid> <scope>
@@ -88,7 +88,7 @@ public class PtCommand implements CommandExecutor, TabCompleter {
                 String subjectKey = resolveSubjectKey(type, args[2]);
                 String scope = args[3];
                 long[] v = svc.getNowAndTotal(type, subjectKey, scope);
-                sender.sendMessage(Util.f("&a現在/累計 &7({0}:{1}, {2}): &b{3} / {4}", type, subjectKey, scope, v[0], v[1]));
+                sender.sendMessage(Util.f("&a現在/累計 &7({0}): &b{1} / {2}", scope, v[0], v[1]));
             }
             case "add" -> {
                 // /pt add <type> <key|playerName|uuid> <scope> <amount>
@@ -108,8 +108,8 @@ public class PtCommand implements CommandExecutor, TabCompleter {
                 String nameForDisplay = args[2];
                 svc.ensureAccount(type, subjectKey, scope, nameForDisplay);
                 long[] v = svc.add(type, subjectKey, scope, amt);
-                sender.sendMessage(Util.f("&a{0} ポイントを追加しました。 &7({1}:{2}, {3}) &r現在/累計: &b{4} / {5}",
-                        amt, type, subjectKey, scope, v[0], v[1]));
+                sender.sendMessage(Util.f("&a{0} ポイントを追加しました。 &7({1}) &r現在/累計: &b{2} / {3}",
+                        amt, scope, v[0], v[1]));
             }
             case "sub" -> {
                 // /pt sub <type> <key|playerName|uuid> <scope> <amount>
@@ -128,8 +128,8 @@ public class PtCommand implements CommandExecutor, TabCompleter {
                 svc.ensureAccount(type, subjectKey, scope, args[2]);
                 boolean ok = svc.subtract(type, subjectKey, scope, amt);
                 sender.sendMessage(ok
-                        ? Util.f("&a{0} ポイントを消費しました。 &7({1}:{2}, {3})", amt, type, subjectKey, scope)
-                        : Util.f("&c残高不足で処理できません。 &7({0}:{1}, {2})", type, subjectKey, scope));
+                        ? Util.f("&a{0} ポイントを消費しました。 &7({1})", amt, scope)
+                        : Util.f("&c残高不足で処理できません。 &7({0})", scope));
             }
             case "set" -> {
                 // /pt set <type> <key|playerName|uuid> <scope> <newNow>
@@ -147,8 +147,8 @@ public class PtCommand implements CommandExecutor, TabCompleter {
                 long nv = Long.parseLong(args[4]);
                 svc.ensureAccount(type, subjectKey, scope, args[2]);
                 long[] v = svc.set(type, subjectKey, scope, nv);
-                sender.sendMessage(Util.f("&a残高を {0} に設定しました。 &7({1}:{2}, {3}) &r現在/累計: &b{4} / {5}",
-                        nv, type, subjectKey, scope, v[0], v[1]));
+                sender.sendMessage(Util.f("&a残高を {0} に設定しました。 &7({1}) &r現在/累計: &b{2} / {3}",
+                        nv, scope, v[0], v[1]));
             }
             case "rank" -> {
                 if (args.length < 4) {
@@ -164,11 +164,11 @@ public class PtCommand implements CommandExecutor, TabCompleter {
                         LocalDate day = (args.length >= 5) ? LocalDate.parse(args[4]) : LocalDate.now(zoneId);
                         int limit = (args.length >= 6) ? Integer.parseInt(args[5]) : 10;
                         List<RankRow> rows = svc.getDailyTop(subjectType, scope, day, limit);
-                        sender.sendMessage(Util.f("&6&lデイリーランキング &7({0} / {1} / {2})", subjectType, scope, day));
+                        sender.sendMessage(Util.f("&6&lデイリーランキング &7({0} / {1})", scope, day));
                         int i = 1;
                         for (RankRow r : rows) {
-                            sender.sendMessage(Util.f("&e#{0} &b{1} &7({2}:{3}) &f+{4} &8現在:{5}",
-                                    i++, r.name, r.subjectType, r.subjectKey, r.gained, r.nowPoint));
+                            sender.sendMessage(Util.f("&e#{0} &b{1} &f+{2}",
+                                    i++, r.name, r.gained));
                         }
                     }
                     case "weekly" -> {
@@ -176,21 +176,21 @@ public class PtCommand implements CommandExecutor, TabCompleter {
                         LocalDate start = (args.length >= 5) ? LocalDate.parse(args[4]) : end.minusDays(6);
                         int limit = (args.length >= 7) ? Integer.parseInt(args[6]) : 10;
                         List<RankRow> rows = svc.getWeeklyTop(subjectType, scope, start, end, limit);
-                        sender.sendMessage(Util.f("&d&lウィークリーランキング &7({0} / {1} ~ {2} / {3})", subjectType, start, end, scope));
+                        sender.sendMessage(Util.f("&d&lウィークリーランキング &7( {0} ~ {1} / {2})", start, end, scope));
                         int i = 1;
                         for (RankRow r : rows) {
-                            sender.sendMessage(Util.f("&e#{0} &b{1} &7({2}:{3}) &f+{4} &8現在:{5}",
-                                    i++, r.name, r.subjectType, r.subjectKey, r.gained, r.nowPoint));
+                            sender.sendMessage(Util.f("&e#{0} &b{1}  &f+{2}",
+                                    i++, r.name, r.gained));
                         }
                     }
                     case "global" -> {
                         int limit = (args.length >= 5) ? Integer.parseInt(args[4]) : 10;
                         List<RankRow> rows = svc.getGlobalTop(subjectType, scope, limit);
-                        sender.sendMessage(Util.f("&b&l全期間ランキング &7({0} / {1})", subjectType, scope));
+                        sender.sendMessage(Util.f("&b&l全期間ランキング &7({0})", scope));
                         int i = 1;
                         for (RankRow r : rows) {
-                            sender.sendMessage(Util.f("&e#{0} &b{1} &7({2}:{3}) &f獲得ポイント:{4}",
-                                    i++, r.name, r.subjectType, r.subjectKey, r.gained));
+                            sender.sendMessage(Util.f("&e#{0} &b{1} &f+{2}",
+                                    i++, r.name, r.gained));
                         }
                     }
                     default -> sender.sendMessage(Util.f("&e/pt rank <daily|weekly|global> <PLAYER|TEAM> <スコープ> [...]"));

@@ -1,5 +1,7 @@
 package dev.felnull.pointed.database;
 
+import dev.felnull.pointed.database.api.Names;
+
 import java.sql.*;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
@@ -15,54 +17,52 @@ public final class TableInitializer {
              Statement stmt = conn.createStatement()) {
 
             // ========== 1) 骨格だけCREATE（最小列） ==========
-
             // subjects
-            stmt.executeUpdate("CREATE TABLE IF NOT EXISTS subjects (" +
+            stmt.executeUpdate("CREATE TABLE IF NOT EXISTS " + Names.t("subjects") + " (" +
                     " id BIGINT AUTO_INCREMENT PRIMARY KEY" +
                     ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
             // accounts
-            stmt.executeUpdate("CREATE TABLE IF NOT EXISTS accounts (" +
+            stmt.executeUpdate("CREATE TABLE IF NOT EXISTS " + Names.t("accounts") + " (" +
                     " id BIGINT AUTO_INCREMENT PRIMARY KEY" +
                     ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
             // account_balances
-            stmt.executeUpdate("CREATE TABLE IF NOT EXISTS account_balances (" +
+            stmt.executeUpdate("CREATE TABLE IF NOT EXISTS " + Names.t("account_balances") + " (" +
                     " account_id BIGINT PRIMARY KEY" +
                     ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
             // account_daily
-            stmt.executeUpdate("CREATE TABLE IF NOT EXISTS account_daily (" +
+            stmt.executeUpdate("CREATE TABLE IF NOT EXISTS " + Names.t("account_daily") + " (" +
                     " account_id BIGINT NOT NULL," +
                     " day DATE NOT NULL," +
                     " PRIMARY KEY (account_id, day)" +
                     ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
             // rewards
-            stmt.executeUpdate("CREATE TABLE IF NOT EXISTS rewards (" +
+            stmt.executeUpdate("CREATE TABLE IF NOT EXISTS " + Names.t("rewards") + " (" +
                     " id INT AUTO_INCREMENT PRIMARY KEY" +
                     ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
             // reward_items
-            stmt.executeUpdate("CREATE TABLE IF NOT EXISTS reward_items (" +
+            stmt.executeUpdate("CREATE TABLE IF NOT EXISTS " + Names.t("reward_items") + " (" +
                     " reward_id INT NOT NULL" +
                     ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
             // reward_prerequisites
-            stmt.executeUpdate("CREATE TABLE IF NOT EXISTS reward_prerequisites (" +
+            stmt.executeUpdate("CREATE TABLE IF NOT EXISTS " + Names.t("reward_prerequisites") + " (" +
                     " reward_id INT NOT NULL" +
                     ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
             // subject_rewards
-            stmt.executeUpdate("CREATE TABLE IF NOT EXISTS subject_rewards (" +
+            stmt.executeUpdate("CREATE TABLE IF NOT EXISTS " + Names.t("subject_rewards") + " (" +
                     " subject_id BIGINT NOT NULL" +
                     ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
             // point_ledger
-            stmt.executeUpdate("CREATE TABLE IF NOT EXISTS point_ledger (" +
+            stmt.executeUpdate("CREATE TABLE IF NOT EXISTS " + Names.t("point_ledger") + " (" +
                     " id BIGINT AUTO_INCREMENT PRIMARY KEY" +
                     ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
-
             // ========== 2) 不足カラムを追加 ==========
 
             // subjects
@@ -150,82 +150,87 @@ public final class TableInitializer {
 
     // ========= ユーティリティ =========
 
-    private static void addColumnIfNotExists(Connection conn, String tableName, String columnName, String columnDefinition) {
+    private static void addColumnIfNotExists(Connection conn, String baseTable, String columnName, String columnDefinition) {
+        String phys = Names.phys(baseTable); // バッククォートなし実名
         try {
             boolean exists = false;
             DatabaseMetaData md = conn.getMetaData();
-            try (ResultSet rs = md.getColumns(null, null, tableName, columnName)) {
+            try (ResultSet rs = md.getColumns(null, null, phys, columnName)) {
                 exists = rs.next();
             }
             if (!exists) {
-                try (ResultSet rs = conn.getMetaData().getColumns(null, null, tableName.toUpperCase(), columnName.toUpperCase())) {
+                try (ResultSet rs = md.getColumns(null, null, phys.toUpperCase(), columnName.toUpperCase())) {
                     exists = rs.next();
                 }
             }
             if (exists) return;
 
-            String sql = "ALTER TABLE `" + tableName + "` ADD COLUMN `" + columnName + "` " + columnDefinition;
+            String sql = "ALTER TABLE " + Names.t(baseTable) + " ADD COLUMN `" + columnName + "` " + columnDefinition;
             try (Statement st = conn.createStatement()) {
                 st.executeUpdate(sql);
-                LOGGER.info("[Pointed] " + tableName + " にカラム '" + columnName + "' を追加");
+                LOGGER.info("[Pointed] " + phys + " にカラム '" + columnName + "' を追加");
             }
         } catch (SQLException e) {
-            LOGGER.warning("[Pointed] addColumn 失敗 (" + tableName + "." + columnName + "): " + e.getMessage());
+            LOGGER.warning("[Pointed] addColumn 失敗 (" + phys + "." + columnName + "): " + e.getMessage());
         }
     }
 
-    private static void ensurePrimaryKey(Connection conn, String table, String[] columns) {
+    private static void ensurePrimaryKey(Connection conn, String baseTable, String[] columns) {
+        String phys = Names.phys(baseTable);
         try {
             Set<String> existing = new LinkedHashSet<String>();
-            try (ResultSet rs = conn.getMetaData().getPrimaryKeys(null, null, table)) {
+            DatabaseMetaData md = conn.getMetaData();
+            try (ResultSet rs = md.getPrimaryKeys(null, null, phys)) {
                 while (rs.next()) existing.add(rs.getString("COLUMN_NAME").toLowerCase());
             }
             Set<String> target = new LinkedHashSet<String>();
             for (String c : columns) target.add(c.toLowerCase());
             if (existing.equals(target)) return;
             if (!existing.isEmpty()) {
-                LOGGER.warning("[Pointed] " + table + " に既存PrimaryKeyがあり変更しない");
+                LOGGER.warning("[Pointed] " + phys + " に既存PrimaryKeyがあり変更しない");
                 return;
             }
             String cols = joinBackticked(columns);
             try (Statement st = conn.createStatement()) {
-                st.executeUpdate("ALTER TABLE `" + table + "` ADD PRIMARY KEY (" + cols + ")");
-                LOGGER.info("[Pointed] " + table + " に PRIMARY KEY 付与: " + Arrays.toString(columns));
+                st.executeUpdate("ALTER TABLE " + Names.t(baseTable) + " ADD PRIMARY KEY (" + cols + ")");
+                LOGGER.info("[Pointed] " + phys + " に PRIMARY KEY 付与: " + Arrays.toString(columns));
             }
         } catch (SQLException e) {
-            LOGGER.warning("[Pointed] ensurePrimaryKey 失敗 (" + table + "): " + e.getMessage());
+            LOGGER.warning("[Pointed] ensurePrimaryKey 失敗 (" + phys + "): " + e.getMessage());
         }
     }
 
-    private static void ensureUniqueIndex(Connection conn, String table, String indexName, String[] columns) {
+    private static void ensureUniqueIndex(Connection conn, String baseTable, String indexName, String[] columns) {
+        String phys = Names.phys(baseTable);
         try {
-            if (indexExists(conn, table, indexName)) return;
+            if (indexExists(conn, phys, indexName)) return;
             String cols = joinBackticked(columns);
             try (Statement st = conn.createStatement()) {
-                st.executeUpdate("CREATE UNIQUE INDEX `" + indexName + "` ON `" + table + "`(" + cols + ")");
-                LOGGER.info("[Pointed] " + table + " に UNIQUE INDEX " + indexName + " 作成");
+                st.executeUpdate("CREATE UNIQUE INDEX `" + indexName + "` ON " + Names.t(baseTable) + "(" + cols + ")");
+                LOGGER.info("[Pointed] " + phys + " に UNIQUE INDEX " + indexName + " 作成");
             }
         } catch (SQLException e) {
-            LOGGER.warning("[Pointed] ensureUniqueIndex 失敗 (" + table + "/" + indexName + "): " + e.getMessage());
+            LOGGER.warning("[Pointed] ensureUniqueIndex 失敗 (" + phys + "/" + indexName + "): " + e.getMessage());
         }
     }
 
-    private static void ensureIndex(Connection conn, String table, String indexName, String[] columns) {
+    private static void ensureIndex(Connection conn, String baseTable, String indexName, String[] columns) {
+        String phys = Names.phys(baseTable);
         try {
-            if (indexExists(conn, table, indexName)) return;
+            if (indexExists(conn, phys, indexName)) return;
             String cols = joinBackticked(columns);
             try (Statement st = conn.createStatement()) {
-                st.executeUpdate("CREATE INDEX `" + indexName + "` ON `" + table + "`(" + cols + ")");
-                LOGGER.info("[Pointed] " + table + " に INDEX " + indexName + " 作成");
+                st.executeUpdate("CREATE INDEX `" + indexName + "` ON " + Names.t(baseTable) + "(" + cols + ")");
+                LOGGER.info("[Pointed] " + phys + " に INDEX " + indexName + " 作成");
             }
         } catch (SQLException e) {
-            LOGGER.warning("[Pointed] ensureIndex 失敗 (" + table + "/" + indexName + "): " + e.getMessage());
+            LOGGER.warning("[Pointed] ensureIndex 失敗 (" + phys + "/" + indexName + "): " + e.getMessage());
         }
     }
 
-    private static boolean indexExists(Connection conn, String table, String indexName) throws SQLException {
+    private static boolean indexExists(Connection conn, String physTable, String indexName) throws SQLException {
         DatabaseMetaData md = conn.getMetaData();
-        try (ResultSet rs = md.getIndexInfo(null, null, table, false, false)) {
+        try (ResultSet rs = md.getIndexInfo(null, null, physTable, false, false)) {
             while (rs.next()) {
                 String existing = rs.getString("INDEX_NAME");
                 if (indexName.equalsIgnoreCase(existing)) return true;
@@ -234,31 +239,31 @@ public final class TableInitializer {
         return false;
     }
 
-    private static void ensureForeignKey(Connection conn, String table, String foreignKeyName,
-                                         String col, String refTable, String refCol,
+    private static void ensureForeignKey(Connection conn, String baseTable, String foreignKeyName,
+                                         String col, String refBaseTable, String refCol,
                                          String onDelete, String onUpdate) {
+        String phys = Names.phys(baseTable);
         try {
-            if (foreignKeyExists(conn, table, foreignKeyName)) return;
-            String sql = "ALTER TABLE `" + table + "` " +
+            if (foreignKeyExists(conn, phys, foreignKeyName)) return;
+            String sql = "ALTER TABLE " + Names.t(baseTable) + " " +
                     "ADD CONSTRAINT `" + foreignKeyName + "` FOREIGN KEY (`" + col + "`) " +
-                    "REFERENCES `" + refTable + "`(`" + refCol + "`) " +
+                    "REFERENCES " + Names.t(refBaseTable) + "(`" + refCol + "`) " +
                     "ON DELETE " + onDelete + " ON UPDATE " + onUpdate;
             try (Statement st = conn.createStatement()) {
                 st.executeUpdate(sql);
-                LOGGER.info("[Pointed] " + table + " に ForeignKey " + foreignKeyName + " 付与");
+                LOGGER.info("[Pointed] " + phys + " に ForeignKey " + foreignKeyName + " 付与");
             }
         } catch (SQLException e) {
-            LOGGER.warning("[Pointed] ensureForeignKey 失敗 (" + table + "/" + foreignKeyName + "): " + e.getMessage());
+            LOGGER.warning("[Pointed] ensureForeignKey 失敗 (" + phys + "/" + foreignKeyName + "): " + e.getMessage());
         }
     }
 
-    private static boolean foreignKeyExists(Connection conn, String table, String foreignKey) throws SQLException {
-        // INFORMATION_SCHEMA からforeignKeyの存在を確認
+    private static boolean foreignKeyExists(Connection conn, String physTable, String foreignKey) throws SQLException {
         String sql = "SELECT CONSTRAINT_NAME FROM INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS " +
                 "WHERE CONSTRAINT_SCHEMA = DATABASE() AND CONSTRAINT_NAME = ? AND TABLE_NAME = ?";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, foreignKey);
-            ps.setString(2, table);
+            ps.setString(2, physTable);
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next();
             }

@@ -4,3 +4,4 @@ database:
   database: "pointed"
   user: "pointed"
   pass: "password"
+  table_prefix: "pointed_"
