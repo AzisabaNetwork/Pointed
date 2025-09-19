@@ -1,19 +1,87 @@
-Pointed(イベントポイント管理システム)
-```
-簡易マニュアル
-・/pointed create [数字] ※数字はオプション 既に存在するリワードを編集する際に入力
-   リワードを作成するRewardIDはリワードページのスロット位置に使われる
-    報酬アイテムは右下のチェストをクリック後開いたGUIの中に渡したいアイテムを入れる(お金は非対応)閉じるときはescでok元の画面に戻ります
-・/pointed point [playerName] [add(追加※追加のみ累計ポイントに追加されます),subtract(引く),set(その値に設定)] [数字]
-    ポイントを追加したり設定したり
-・/pointed toggle 
-    リワード受け取り画面を許可するかの切り替え
-・/ptreward /ptr
-    リワード受け取り一般プレイヤーも利用
-・/ranking
-    ポイントのランキングを表示　更新はプラグイン起動時または11時,23時
+# Pointed `/pt` コマンド
 
-繰り返し受け取り可能な報酬は受け取るたびに元のコストのもらった回数倍に消費コストが増えていきます
+Paper/Spigot サーバー向けのポイント管理コマンド。
+
+
+---
+
+## コマンド一覧
+
+### ポイント参照
+#### 現在ポイント
 ```
-技術的仕様
-sharedフォルダでプレイヤーデータとリワードデータを保持しているため試合サーバーからリワードを設定したりも可能
+/pt getnow <type> <key|playerName|uuid> <scope>
+```
+
+#### 累計ポイント
+```
+/pt gettotal <type> <key|playerName|uuid> <scope>
+```
+
+#### 現在/累計 両方
+```
+/pt get <type> <key|playerName|uuid> <scope>
+```
+
+---
+
+### ポイント操作（管理者）
+#### 加算
+```
+/pt add <type> <key|playerName|uuid> <scope> <amount>
+```
+
+#### 減算
+```
+/pt sub <type> <key|playerName|uuid> <scope> <amount>
+```
+
+#### 残高設定
+```
+/pt set <type> <key|playerName|uuid> <scope> <newNow>
+```
+
+---
+
+### ランキング
+#### 日別
+```
+/pt rank daily <type> <scope> [day] [limit]
+```
+- yyyy-MM-dd
+- limit default：10  
+
+#### 週次
+```
+/pt rank weekly <type> <scope> [start] [end] [limit]
+```
+- end yyyy-MM-dd
+- start yyyy-MM-dd
+- limit default：10  
+
+#### 全期間
+```
+/pt rank global <type> <scope> [limit]
+```
+- limit default：10  
+
+---
+
+## 使用例
+```text
+/pt getnow PLAYER Steve battle
+/pt add PLAYER Steve shop 100
+/pt sub PLAYER Steve shop 50
+/pt set PLAYER Steve shop 1000
+
+/pt rank daily PLAYER battle
+/pt rank weekly TEAM battle 2025-09-14 2025-09-20 15
+/pt rank global SYSTEM event 50
+```
+
+---
+
+## タブ補完
+- 第1引数：`getnow`, `gettotal`, `get`, `add`, `sub`, `set`, `rank`
+- 第2引数（参照・操作系）：`PLAYER`, `TEAM`, `SYSTEM`
+- 第2引数（rank）：`daily`, `weekly`, `global`
