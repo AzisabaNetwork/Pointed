@@ -108,8 +108,8 @@ public class PtCommand implements CommandExecutor, TabCompleter {
                 String nameForDisplay = args[2];
                 svc.ensureAccount(type, subjectKey, scope, nameForDisplay);
                 long[] v = svc.add(type, subjectKey, scope, amt);
-                sender.sendMessage(Util.f("&a{0} ポイントを追加しました。 &7({1}) &r現在/累計: &b{2} / {3}",
-                        amt, scope, v[0], v[1]));
+                sender.sendMessage(Util.f("&a{0}に{1} ポイントを追加しました。 &7({2}) &r現在/累計: &b{3} / {4}",
+                        nameForDisplay, amt, scope, v[0], v[1]));
             }
             case "sub" -> {
                 // /pt sub <type> <key|playerName|uuid> <scope> <amount>
@@ -128,7 +128,7 @@ public class PtCommand implements CommandExecutor, TabCompleter {
                 svc.ensureAccount(type, subjectKey, scope, args[2]);
                 boolean ok = svc.subtract(type, subjectKey, scope, amt);
                 sender.sendMessage(ok
-                        ? Util.f("&a{0} ポイントを消費しました。 &7({1})", amt, scope)
+                        ? Util.f("&a{0}の{1} ポイントを消費しました。 &7({2})", args[2], amt, scope)
                         : Util.f("&c残高不足で処理できません。 &7({0})", scope));
             }
             case "set" -> {
@@ -147,8 +147,8 @@ public class PtCommand implements CommandExecutor, TabCompleter {
                 long nv = Long.parseLong(args[4]);
                 svc.ensureAccount(type, subjectKey, scope, args[2]);
                 long[] v = svc.set(type, subjectKey, scope, nv);
-                sender.sendMessage(Util.f("&a残高を {0} に設定しました。 &7({1}) &r現在/累計: &b{2} / {3}",
-                        nv, scope, v[0], v[1]));
+                sender.sendMessage(Util.f("&a{0}の残高を {1} に設定しました。 &7({2}) &r現在/累計: &b{3} / {4}",
+                        args[2],nv, scope, v[0], v[1]));
             }
             case "rank" -> {
                 if (args.length < 4) {
@@ -156,47 +156,84 @@ public class PtCommand implements CommandExecutor, TabCompleter {
                     return true;
                 }
                 String mode = args[1].toLowerCase();
-                String subjectType = args[2].toUpperCase(); // PLAYER / TEAM / SYSTEM
+                String subjectType = args[2].toUpperCase();
                 String scope = args[3];
+
+                java.util.function.BiFunction<Integer,Integer,Integer> calcFetch = (base, extra) -> Math.max(1, base + extra);
 
                 switch (mode) {
                     case "daily" -> {
                         LocalDate day = (args.length >= 5) ? LocalDate.parse(args[4]) : LocalDate.now(zoneId);
                         int limit = (args.length >= 6) ? Integer.parseInt(args[5]) : 10;
-                        List<RankRow> rows = svc.getDailyTop(subjectType, scope, day, limit);
+                        int fetchLimit = calcFetch.apply(limit, 100);
+                        List<RankRow> rows = svc.getDailyTop(subjectType, scope, day, fetchLimit);
+
                         sender.sendMessage(Util.f("&6&lデイリーランキング &7({0} / {1})", scope, day));
-                        int i = 1;
+
+                        long prevGained = Long.MIN_VALUE;
+                        int shown = 0;
+                        int rankNum = 0;
+
                         for (RankRow r : rows) {
-                            sender.sendMessage(Util.f("&e#{0} &b{1} &f+{2}",
-                                    i++, r.name, r.gained));
+                            if (prevGained != r.gained) {
+                                rankNum = shown + 1;
+                                prevGained = r.gained;
+                            }
+                            sender.sendMessage(formatRankLine(rankNum, r));
+                            shown++;
                         }
                     }
+
                     case "weekly" -> {
                         LocalDate end = (args.length >= 6) ? LocalDate.parse(args[5]) : LocalDate.now(zoneId);
                         LocalDate start = (args.length >= 5) ? LocalDate.parse(args[4]) : end.minusDays(6);
                         int limit = (args.length >= 7) ? Integer.parseInt(args[6]) : 10;
-                        List<RankRow> rows = svc.getWeeklyTop(subjectType, scope, start, end, limit);
-                        sender.sendMessage(Util.f("&d&lウィークリーランキング &7( {0} ~ {1} / {2})", start, end, scope));
-                        int i = 1;
+                        int fetchLimit = calcFetch.apply(limit, 100);
+                        List<RankRow> rows = svc.getWeeklyTop(subjectType, scope, start, end, fetchLimit);
+
+                        sender.sendMessage(Util.f("&d&lウィークリーランキング &7({0} ~ {1} / {2})", start, end, scope));
+
+                        long prevGained = Long.MIN_VALUE;
+                        int shown = 0;
+                        int rankNum = 0;
+
                         for (RankRow r : rows) {
-                            sender.sendMessage(Util.f("&e#{0} &b{1}  &f+{2}",
-                                    i++, r.name, r.gained));
+                            if (prevGained != r.gained) {
+                                if (shown >= limit) break;
+                                rankNum = shown + 1;
+                                prevGained = r.gained;
+                            }
+                            sender.sendMessage(formatRankLine(rankNum, r));
+                            shown++;
                         }
                     }
+
                     case "global" -> {
                         int limit = (args.length >= 5) ? Integer.parseInt(args[4]) : 10;
-                        List<RankRow> rows = svc.getGlobalTop(subjectType, scope, limit);
+                        int fetchLimit = calcFetch.apply(limit, 100);
+                        List<RankRow> rows = svc.getGlobalTop(subjectType, scope, fetchLimit);
+
                         sender.sendMessage(Util.f("&b&l全期間ランキング &7({0})", scope));
-                        int i = 1;
+
+                        long prevGained = Long.MIN_VALUE;
+                        int shown = 0;
+                        int rankNum = 0;
+
                         for (RankRow r : rows) {
-                            sender.sendMessage(Util.f("&e#{0} &b{1} &f+{2}",
-                                    i++, r.name, r.gained));
+                            if (prevGained != r.gained) {
+                                if (shown >= limit) break;
+                                rankNum = shown + 1;
+                                prevGained = r.gained;
+                            }
+                            sender.sendMessage(formatRankLine(rankNum, r));
+                            shown++;
                         }
                     }
-                    default -> sender.sendMessage(Util.f("&e/pt rank <daily|weekly|global> <PLAYER|TEAM> <スコープ> [...]"));
+
+                    default -> sender.sendMessage(Util.f("&e/pt rank <daily|weekly|global> <PLAYER|TEAM|SYSTEM> <スコープ> [...]"));
                 }
             }
-            default -> sender.sendMessage(Util.f("&e/pt <getnow|gettotal|get|add|sub|set|rank>"));
+
         }
 
         return true;
@@ -215,5 +252,16 @@ public class PtCommand implements CommandExecutor, TabCompleter {
             return List.of("daily", "weekly", "global");
         }
         return List.of();
+    }
+
+    // 共通メソッド
+    private String formatRankLine(int rankNum, RankRow r) {
+        String color = switch (rankNum) {
+            case 1 -> "&6"; // 金
+            case 2 -> "&7"; // 銀
+            case 3 -> "&c"; // 赤
+            default -> "&e"; // 黄
+        };
+        return Util.f(color + "#{0} &b{1} &f+{2}", rankNum, r.name, r.gained);
     }
 }
