@@ -1,4 +1,4 @@
-package dev.felnull.pointed.database.api;
+package dev.felnull.pointed.core.database;
 
 public final class Names {
     private static String PREFIX = "";

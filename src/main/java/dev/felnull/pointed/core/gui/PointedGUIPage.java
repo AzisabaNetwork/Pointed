@@ -1,4 +1,4 @@
-package dev.felnull.pointed.gui;
+package dev.felnull.pointed.core.gui;
 
 import dev.felnull.bettergui.core.GUIPage;
 import dev.felnull.bettergui.core.InventoryGUI;

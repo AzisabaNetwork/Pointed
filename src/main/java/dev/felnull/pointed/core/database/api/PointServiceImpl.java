@@ -1,6 +1,7 @@
-package dev.felnull.pointed.database.api;
+package dev.felnull.pointed.core.database.api;
 
-import dev.felnull.pointed.data.RankRow;
+import dev.felnull.pointed.core.database.data.RankRow;
+import dev.felnull.pointed.core.database.Names;
 
 import javax.sql.DataSource;
 import java.sql.*;
@@ -8,7 +9,6 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 public final class PointServiceImpl implements PointService {
     private final DataSource ds;
@@ -332,5 +332,95 @@ public final class PointServiceImpl implements PointService {
             }
         } catch (SQLException e) { throw new RuntimeException(e); }
         return list;
+    }
+
+    @Override
+    public boolean deleteSubjectInScope(String subjectType, String subjectKey, String scope) {
+        String qAccountId = "SELECT a.id FROM " + Names.t("accounts") + " a " +
+                "JOIN " + Names.t("subjects") + " s ON s.id=a.subject_id " +
+                "WHERE a.scope=? AND s.type=? AND s.subject_key=?";
+        try (Connection con = ds.getConnection()) {
+            con.setAutoCommit(false);
+            try (PreparedStatement ps = con.prepareStatement(qAccountId)) {
+                ps.setString(1, scope);
+                ps.setString(2, subjectType);
+                ps.setString(3, subjectKey);
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (!rs.next()) { con.commit(); return false; }
+                    long accountId = rs.getLong(1);
+
+                    try (PreparedStatement d1 = con.prepareStatement(
+                            "DELETE FROM " + Names.t("account_daily") + " WHERE account_id=?");
+                         PreparedStatement d2 = con.prepareStatement(
+                                 "DELETE FROM " + Names.t("account_balances") + " WHERE account_id=?");
+                         PreparedStatement d3 = con.prepareStatement(
+                                 "DELETE FROM " + Names.t("accounts") + " WHERE id=?")) {
+                        d1.setLong(1, accountId); d1.executeUpdate();
+                        d2.setLong(1, accountId); d2.executeUpdate();
+                        d3.setLong(1, accountId); int del = d3.executeUpdate();
+                        con.commit();
+                        return del > 0;
+                    }
+                }
+            } catch (SQLException e) { con.rollback(); throw e; }
+            finally { con.setAutoCommit(true); }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public boolean deleteSubjectEverywhere(String subjectType, String subjectKey) {
+        try (Connection con = ds.getConnection()) {
+            con.setAutoCommit(false);
+            try {
+                // 1) subject をロック取得
+                Long subjectId = null;
+                try (PreparedStatement ps = con.prepareStatement(
+                        "SELECT id FROM " + Names.t("subjects") + " WHERE type=? AND subject_key=? FOR UPDATE")) {
+                    ps.setString(1, subjectType);
+                    ps.setString(2, subjectKey);
+                    try (ResultSet rs = ps.executeQuery()) {
+                        if (rs.next()) subjectId = rs.getLong(1);
+                    }
+                }
+                if (subjectId == null) { con.commit(); return false; }
+
+                // 2) すべての account(履歴) を列挙し依存削除
+                try (PreparedStatement ps = con.prepareStatement(
+                        "SELECT id FROM " + Names.t("accounts") + " WHERE subject_id=?")) {
+                    ps.setLong(1, subjectId);
+                    try (ResultSet rs = ps.executeQuery()) {
+                        while (rs.next()) {
+                            long accountId = rs.getLong(1);
+                            try (PreparedStatement d1 = con.prepareStatement(
+                                    "DELETE FROM " + Names.t("account_daily") + " WHERE account_id=?");
+                                 PreparedStatement d2 = con.prepareStatement(
+                                         "DELETE FROM " + Names.t("account_balances") + " WHERE account_id=?")) {
+                                d1.setLong(1, accountId); d1.executeUpdate();
+                                d2.setLong(1, accountId); d2.executeUpdate();
+                            }
+                        }
+                    }
+                }
+                try (PreparedStatement ps = con.prepareStatement(
+                        "DELETE FROM " + Names.t("accounts") + " WHERE subject_id=?")) {
+                    ps.setLong(1, subjectId);
+                    ps.executeUpdate();
+                }
+
+                // 3) subjects を削除（※ team_meta は FK CASCADE 前提）
+                try (PreparedStatement ps = con.prepareStatement(
+                        "DELETE FROM " + Names.t("subjects") + " WHERE id=?")) {
+                    ps.setLong(1, subjectId);
+                    int del = ps.executeUpdate();
+                    con.commit();
+                    return del > 0;
+                }
+            } catch (SQLException e) { con.rollback(); throw e; }
+            finally { con.setAutoCommit(true); }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

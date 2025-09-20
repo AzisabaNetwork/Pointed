@@ -1,6 +1,4 @@
-package dev.felnull.pointed.data;
-
-import java.util.UUID;
+package dev.felnull.pointed.core.database.data;
 
 public final class RankRow {
     public final String subjectType;

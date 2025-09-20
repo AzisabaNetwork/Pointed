@@ -1,6 +1,4 @@
-package dev.felnull.pointed.database;
-
-import dev.felnull.pointed.database.api.Names;
+package dev.felnull.pointed.core.database;
 
 import java.sql.*;
 import java.util.Arrays;
@@ -63,6 +61,14 @@ public final class TableInitializer {
             stmt.executeUpdate("CREATE TABLE IF NOT EXISTS " + Names.t("point_ledger") + " (" +
                     " id BIGINT AUTO_INCREMENT PRIMARY KEY" +
                     ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+            // ====Team====
+            // team_meta（骨格）
+            stmt.executeUpdate("CREATE TABLE IF NOT EXISTS " + Names.t("team_meta") + " (" +
+                    " subject_id BIGINT NOT NULL," +
+                    " PRIMARY KEY (subject_id)" +
+                    ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
             // ========== 2) 不足カラムを追加 ==========
 
             // subjects
@@ -110,6 +116,12 @@ public final class TableInitializer {
             addColumnIfNotExists(conn, "point_ledger", "ref_id",     "VARCHAR(64)");
             addColumnIfNotExists(conn, "point_ledger", "created_at", "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP");
 
+            // ==== Team ====
+            // team_meta
+            addColumnIfNotExists(conn, "team_meta", "color_code", "VARCHAR(16) NOT NULL");
+            addColumnIfNotExists(conn, "team_meta", "sort_order", "INT NOT NULL DEFAULT 0");
+            addColumnIfNotExists(conn, "team_meta", "active",     "TINYINT(1) NOT NULL DEFAULT 1");
+
             // ========== 3) インデックス・制約 ==========
 
             ensureUniqueIndex(conn, "subjects", "uniq_subject_key", new String[]{"type","subject_key"});
@@ -140,6 +152,14 @@ public final class TableInitializer {
 
             ensureForeignKey(conn, "point_ledger", "fk_pl_acc",
                     "account_id", "accounts", "id", "CASCADE", "CASCADE");
+
+            // subjects(id) へのFK。subjects 削除時に team_meta も自動削除
+            ensureForeignKey(conn, "team_meta", "fk_tm_subject",
+                    "subject_id", "subjects", "id", "CASCADE", "CASCADE");
+
+            // 並び順・有効/無効フィルタの補助INDEX
+            ensureIndex(conn, "team_meta", "idx_tm_sort",   new String[]{"sort_order"});
+            ensureIndex(conn, "team_meta", "idx_tm_active", new String[]{"active"});
 
             LOGGER.info("[Pointed] テーブル初期化完了！");
 

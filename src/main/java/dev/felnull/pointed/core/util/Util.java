@@ -1,11 +1,9 @@
-package dev.felnull.pointed.util;
+package dev.felnull.pointed.core.util;
 
 import net.kyori.adventure.text.Component;
 import org.bukkit.ChatColor;
 
-import java.nio.ByteBuffer;
 import java.text.MessageFormat;
-import java.util.UUID;
 
 public class Util {
     // メッセージをフォーマットして、&で色をつける

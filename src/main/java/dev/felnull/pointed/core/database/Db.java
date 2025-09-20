@@ -1,4 +1,4 @@
-package dev.felnull.pointed.database;
+package dev.felnull.pointed.core.database;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;

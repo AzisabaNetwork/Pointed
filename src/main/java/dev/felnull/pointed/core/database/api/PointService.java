@@ -1,10 +1,6 @@
-package dev.felnull.pointed.database.api;
+package dev.felnull.pointed.core.database.api;
 
-import dev.felnull.pointed.data.RankRow;
-
-import java.time.LocalDate;
-import java.util.List;
-import java.util.UUID;
+import dev.felnull.pointed.core.database.data.RankRow;
 
 public interface PointService {
 
@@ -27,4 +23,10 @@ public interface PointService {
     java.util.List<RankRow> getDailyTop(String subjectType, String scope, java.time.LocalDate day, int limit);
     java.util.List<RankRow> getWeeklyTop(String subjectType, String scope, java.time.LocalDate startInclusive, java.time.LocalDate endInclusive, int limit);
     java.util.List<RankRow> getGlobalTop(String subjectType, String scope, int limit);
+
+    //指定 scope にある subject の口座とポイント履歴を削除（subjects は残す）
+    boolean deleteSubjectInScope(String subjectType, String subjectKey, String scope);
+
+    //すべての scope で subject を完全削除（accounts/履歴を消し、subjects も削除
+    boolean deleteSubjectEverywhere(String subjectType, String subjectKey);
 }

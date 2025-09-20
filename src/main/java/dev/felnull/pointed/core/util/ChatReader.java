@@ -1,9 +1,7 @@
-package dev.felnull.pointed.util;
+package dev.felnull.pointed.core.util;
 
 import dev.felnull.bettergui.core.InventoryGUI;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
-import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 
 import java.util.HashMap;

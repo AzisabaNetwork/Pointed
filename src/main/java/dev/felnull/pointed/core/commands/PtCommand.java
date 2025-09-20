@@ -1,8 +1,8 @@
-package dev.felnull.pointed.commands;
+package dev.felnull.pointed.core.commands;
 
-import dev.felnull.pointed.data.RankRow;
-import dev.felnull.pointed.database.api.PointService;
-import dev.felnull.pointed.util.Util;
+import dev.felnull.pointed.core.database.data.RankRow;
+import dev.felnull.pointed.core.database.api.PointService;
+import dev.felnull.pointed.core.util.Util;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.Command;
@@ -11,7 +11,6 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
 import org.bukkit.plugin.Plugin;
 
-import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.List;

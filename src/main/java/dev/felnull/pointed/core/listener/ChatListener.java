@@ -1,7 +1,6 @@
-package dev.felnull.pointed.listener;
+package dev.felnull.pointed.core.listener;
 
 import dev.felnull.pointed.Pointed;
-import io.papermc.paper.event.player.AsyncChatEvent;
 import lombok.RequiredArgsConstructor;
 import net.kyori.adventure.text.Component;
 import org.bukkit.entity.Player;
