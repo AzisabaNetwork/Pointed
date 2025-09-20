@@ -7,6 +7,7 @@ import dev.felnull.pointed.core.database.Names;
 import dev.felnull.pointed.core.database.api.PointServiceImpl;
 import dev.felnull.pointed.core.listener.ChatListener;
 import dev.felnull.pointed.core.util.ChatReader;
+import dev.felnull.pointed.teams.database.TeamTableInitializer;
 import lombok.Getter;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -42,6 +43,7 @@ public final class Pointed extends JavaPlugin {
         saveDefaultConfig();
         setupPlugin();
         TableInitializer.initTables();
+        TeamTableInitializer.initTables();
     }
 
     @Override

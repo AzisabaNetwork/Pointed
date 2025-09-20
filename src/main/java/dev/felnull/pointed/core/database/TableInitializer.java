@@ -170,7 +170,7 @@ public final class TableInitializer {
 
     // ========= ユーティリティ =========
 
-    private static void addColumnIfNotExists(Connection conn, String baseTable, String columnName, String columnDefinition) {
+    public static void addColumnIfNotExists(Connection conn, String baseTable, String columnName, String columnDefinition) {
         String phys = Names.phys(baseTable); // バッククォートなし実名
         try {
             boolean exists = false;
@@ -234,7 +234,7 @@ public final class TableInitializer {
         }
     }
 
-    private static void ensureIndex(Connection conn, String baseTable, String indexName, String[] columns) {
+    public static void ensureIndex(Connection conn, String baseTable, String indexName, String[] columns) {
         String phys = Names.phys(baseTable);
         try {
             if (indexExists(conn, phys, indexName)) return;
@@ -259,9 +259,9 @@ public final class TableInitializer {
         return false;
     }
 
-    private static void ensureForeignKey(Connection conn, String baseTable, String foreignKeyName,
-                                         String col, String refBaseTable, String refCol,
-                                         String onDelete, String onUpdate) {
+    public static void ensureForeignKey(Connection conn, String baseTable, String foreignKeyName,
+                                        String col, String refBaseTable, String refCol,
+                                        String onDelete, String onUpdate) {
         String phys = Names.phys(baseTable);
         try {
             if (foreignKeyExists(conn, phys, foreignKeyName)) return;
