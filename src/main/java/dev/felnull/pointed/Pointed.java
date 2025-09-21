@@ -8,6 +8,8 @@ import dev.felnull.pointed.core.database.api.PointServiceImpl;
 import dev.felnull.pointed.core.listener.ChatListener;
 import dev.felnull.pointed.core.util.ChatReader;
 import dev.felnull.pointed.teams.database.TeamTableInitializer;
+import dev.felnull.pointed.teams.manager.TeamManager;
+import dev.felnull.pointed.teams.manager.TeamManagerImpl;
 import lombok.Getter;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -27,6 +29,8 @@ public final class Pointed extends JavaPlugin {
     public static List<BukkitTask> taskList = new ArrayList<>();
     ZoneId zoneId = ZoneId.of(getConfig().getString("timezone", "Asia/Tokyo"));
     public static PointServiceImpl pointService;
+    @Getter
+    public TeamManager teamManager;
 
     @Override
     public void onEnable() {
@@ -37,6 +41,7 @@ public final class Pointed extends JavaPlugin {
         Db.init(conf.getString("database.host"), conf.getInt("database.port"), conf.getString("database.database"), conf.getString("database.user"), conf.getString("database.pass"));
         this.chatReader = new ChatReader();
         pointService = new PointServiceImpl(Db.get(), zoneId);
+        teamManager = new TeamManagerImpl();
         Bukkit.getLogger().info("Pointedが動作を開始しました");
         setupCommand();
         setupListener();
@@ -55,8 +60,8 @@ public final class Pointed extends JavaPlugin {
     }
 
     public void setupCommand(){
-        getCommand("pt").setExecutor(new PtCommand(pointService, this, zoneId) {
-        });
+        getCommand("pt").setExecutor(new PtCommand(pointService, this, zoneId));
+        getCommand("ptteam").setExecutor(new PtTeam(this));
     }
     public void setupListener(){
         Bukkit.getPluginManager().registerEvents(new ChatListener(this), this);

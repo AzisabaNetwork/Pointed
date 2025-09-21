@@ -41,44 +41,66 @@ public final class PointServiceImpl implements PointService {
     private static Date toSqlDate(LocalDate d) { return Date.valueOf(d); }
     private Date todayLocal() { return toSqlDate(LocalDate.now(zoneId)); }
 
+    // 1) subjects を upsert して subjectId を返す（nameは上書き）
+    public long ensureSubject(Connection con, String subjectType, String subjectKey, String name) throws SQLException {
+        try (PreparedStatement ps = con.prepareStatement(
+                "INSERT INTO " + Names.t("subjects") + " (type, subject_key, name) VALUES (?, ?, ?) " +
+                        "ON DUPLICATE KEY UPDATE name=VALUES(name)")) {
+            ps.setString(1, subjectType);
+            ps.setString(2, subjectKey);
+            ps.setString(3, name);
+            ps.executeUpdate();
+        }
+        try (PreparedStatement ps = con.prepareStatement(
+                "SELECT id FROM " + Names.t("subjects") + " WHERE type=? AND subject_key=?")) {
+            ps.setString(1, subjectType);
+            ps.setString(2, subjectKey);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) throw new IllegalStateException("Subject not found after upsert");
+                return rs.getLong(1);
+            }
+        }
+    }
+
+    // 2) accounts を upsert して accountId を返す（scopeユニーク）
+    public long ensureAccountForScope(Connection con, long subjectId, String scope) throws SQLException {
+        try (PreparedStatement ps = con.prepareStatement(
+                "INSERT INTO " + Names.t("accounts") + " (subject_id, scope) VALUES (?, ?) " +
+                        "ON DUPLICATE KEY UPDATE scope=scope")) {
+            ps.setLong(1, subjectId);
+            ps.setString(2, scope);
+            ps.executeUpdate();
+        }
+        try (PreparedStatement ps = con.prepareStatement(
+                "SELECT id FROM " + Names.t("accounts") + " WHERE subject_id=? AND scope=?")) {
+            ps.setLong(1, subjectId);
+            ps.setString(2, scope);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) throw new IllegalStateException("Account not found after upsert");
+                return rs.getLong(1);
+            }
+        }
+    }
+
+    // 3) account_balances を確保（INSERT IGNORE）
+    public void ensureBalances(Connection con, long accountId) throws SQLException {
+        try (PreparedStatement ps = con.prepareStatement(
+                "INSERT IGNORE INTO " + Names.t("account_balances") + " (account_id, now_point, total_point) " +
+                        "VALUES (?, 0, 0)")) {
+            ps.setLong(1, accountId);
+            ps.executeUpdate();
+        }
+    }
+
+    // 4) 互換レイヤ（既存の ensureAccount を “まとめ役” に）
     @Override
     public void ensureAccount(String subjectType, String subjectKey, String scope, String name) {
         try (Connection con = ds.getConnection()) {
             con.setAutoCommit(false);
             try {
-                // subjects
-                PreparedStatement ps1 = con.prepareStatement(
-                        "INSERT INTO " + Names.t("subjects") + " (type, subject_key, name) VALUES(?, ?, ?) " +
-                                "ON DUPLICATE KEY UPDATE name=VALUES(name)");
-                ps1.setString(1, subjectType);
-                ps1.setString(2, subjectKey);
-                ps1.setString(3, name);
-                ps1.executeUpdate();
-                ps1.close();
-
-                // accounts
-                PreparedStatement ps2 = con.prepareStatement(
-                        "INSERT INTO " + Names.t("accounts") + " (subject_id, scope) " +
-                                "SELECT id, ? FROM " + Names.t("subjects") + " WHERE type=? AND subject_key=? " +
-                                "ON DUPLICATE KEY UPDATE scope=scope");
-                ps2.setString(1, scope);
-                ps2.setString(2, subjectType);
-                ps2.setString(3, subjectKey);
-                ps2.executeUpdate();
-                ps2.close();
-
-                // account_balances
-                PreparedStatement ps3 = con.prepareStatement(
-                        "INSERT IGNORE INTO " + Names.t("account_balances") + " (account_id, now_point, total_point) " +
-                                "SELECT a.id, 0, 0 FROM " + Names.t("accounts") + " a " +
-                                "JOIN " + Names.t("subjects") + " s ON s.id=a.subject_id " +
-                                "WHERE s.type=? AND s.subject_key=? AND a.scope=?");
-                ps3.setString(1, subjectType);
-                ps3.setString(2, subjectKey);
-                ps3.setString(3, scope);
-                ps3.executeUpdate();
-                ps3.close();
-
+                long subjectId = ensureSubject(con, subjectType, subjectKey, name);
+                long accountId = ensureAccountForScope(con, subjectId, scope);
+                ensureBalances(con, accountId);
                 con.commit();
             } catch (SQLException e) {
                 con.rollback();
@@ -90,7 +112,6 @@ public final class PointServiceImpl implements PointService {
             throw new RuntimeException(e);
         }
     }
-
     @Override
     public long getNowPoint(String subjectType, String subjectKey, String scope) {
         try (Connection con = ds.getConnection();

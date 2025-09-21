@@ -7,12 +7,20 @@ import dev.felnull.pointed.core.database.api.PointServiceImpl;
 import dev.felnull.pointed.core.database.api.SubjectType;
 import dev.felnull.pointed.core.database.data.RankRow;
 import dev.felnull.pointed.core.util.Util;
+import org.bukkit.Bukkit;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
 
 import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ForkJoinPool;
@@ -54,11 +62,6 @@ public class TeamManagerImpl implements TeamManager{
     }
 
     @Override
-    public void createTeam(String teamID, String scope, String displayName) {
-        ptService.ensureAccount(subjectType, teamID, scope, displayName);
-    }
-
-    @Override
     public List<RankRow> getTeamDailyTop(String scope, LocalDate day, int limit) {
         return ptService.getDailyTop(subjectType, scope, day, limit);
     }
@@ -76,23 +79,51 @@ public class TeamManagerImpl implements TeamManager{
     // ===== 管理系 =====
 
     @Override
-    public void upsertTeam(String teamID, String scope, String displayName, String color, Integer sortOrder, Boolean active) {
-        // subjects / accounts / balances を整え、name を最新化
-        ptService.ensureAccount(subjectType, teamID, scope, displayName);
-
+    public void upsertTeam(String teamID, String displayName, String color, Integer sortOrder, Boolean active) {
         try (var con = ds.getConnection()) {
-            long subjectId = findSubjectId(con, teamID);
-            try (var ps = con.prepareStatement(
-                    "INSERT INTO " + Names.t("team_meta") + " (subject_id, color_code, sort_order, active) VALUES (?, ?, ?, ?) " +
-                            "ON DUPLICATE KEY UPDATE color_code=VALUES(color_code), sort_order=COALESCE(VALUES(sort_order), sort_order), active=COALESCE(VALUES(active), active)")) {
-                ps.setLong(1, subjectId);
-                ps.setString(2, color != null ? color : "&f");
-                ps.setInt(3, sortOrder != null ? sortOrder : 0);
-                ps.setBoolean(4, active != null ? active : true);
-                ps.executeUpdate();
+            con.setAutoCommit(false);
+            try {
+                // 1) displayName が null の場合は既存名（なければ teamID）でフォールバック
+                String safeName = displayName;
+                if (safeName == null) {
+                    safeName = loadTeam(teamID).map(TeamData::name).orElse(teamID);
+                }
+
+                // 2) subjects を upsert（name を最新化）
+                //   ※ 既存の ensureSubject(...) を利用（公開化した想定）
+                ptService.ensureSubject(con, "TEAM", teamID, safeName);
+
+                // 3) subject_id 取得（既存ヘルパ）
+                long subjectId = findSubjectId(con, teamID);
+
+                // 4) team_meta を upsert（null は既存値を維持）
+                try (var ps = con.prepareStatement(
+                        "INSERT INTO " + Names.t("team_meta") + " (subject_id, color_code, sort_order, active) " +
+                                "VALUES (?, ?, ?, ?) " +
+                                "ON DUPLICATE KEY UPDATE " +
+                                "  color_code = COALESCE(VALUES(color_code), color_code), " +
+                                "  sort_order = COALESCE(VALUES(sort_order), sort_order), " +
+                                "  active     = COALESCE(VALUES(active),     active)"
+                )) {
+                    ps.setLong(1, subjectId);
+                    ps.setString(2, color);                                  // null → 既存維持
+                    ps.setInt(3,   (sortOrder != null ? sortOrder : 100));   // 初期値100推奨
+                    ps.setBoolean(4,(active     != null ? active   : true)); // デフォルト有効
+                    ps.executeUpdate();
+                }
+
+                con.commit();
+            } catch (SQLException e) {
+                con.rollback();
+                throw e;
+            } finally {
+                con.setAutoCommit(true);
             }
-        } catch (java.sql.SQLException e) { throw new RuntimeException(e); }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
+
 
     @Override
     public void setTeamDisplayName(String teamID, String newName) {
@@ -279,6 +310,173 @@ public class TeamManagerImpl implements TeamManager{
                 sender.sendMessage(legend);
             });
         });
+    }
+
+    // === ヘルパ（このクラス内にprivateで定義） ===
+    private Long findSubjectId(Connection con, String type, String key) throws SQLException {
+        try (PreparedStatement ps = con.prepareStatement(
+                "SELECT id FROM " + Names.t("subjects") + " WHERE type=? AND subject_key=?")) {
+            ps.setString(1, type);
+            ps.setString(2, key);
+            try (ResultSet rs = ps.executeQuery()) { return rs.next() ? rs.getLong(1) : null; }
+        }
+    }
+
+    /** PLAYER subjects を upsert（name上書き）して id 取得 */
+    private long ensurePlayerSubjectId(Connection con, String uuid, String name) throws SQLException {
+        try (PreparedStatement ps = con.prepareStatement(
+                "INSERT INTO " + Names.t("subjects") + " (type, subject_key, name) VALUES('PLAYER', ?, ?) " +
+                        "ON DUPLICATE KEY UPDATE name=VALUES(name)")) {
+            ps.setString(1, uuid);
+            ps.setString(2, name);
+            ps.executeUpdate();
+        }
+        try (PreparedStatement ps = con.prepareStatement(
+                "SELECT id FROM " + Names.t("subjects") + " WHERE type='PLAYER' AND subject_key=?")) {
+            ps.setString(1, uuid);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) throw new IllegalStateException("PLAYER subject not found after upsert: " + uuid);
+                return rs.getLong(1);
+            }
+        }
+    }
+
+    private Long getTeamSubjectId(Connection con, String teamID) throws SQLException {
+        return findSubjectId(con, "TEAM", teamID);
+    }
+
+    // === 実装本体 ===
+    @Override
+    public boolean addMember(String teamID, String playerUuid, String playerName) {
+        try (Connection con = ds.getConnection()) {
+            con.setAutoCommit(false);
+            try {
+                Long teamSid = getTeamSubjectId(con, teamID);
+                if (teamSid == null) throw new IllegalArgumentException("Team not found: " + teamID);
+
+                long playerSid = ensurePlayerSubjectId(con, playerUuid, playerName);
+
+                int inserted;
+                try (PreparedStatement ps = con.prepareStatement(
+                        "INSERT IGNORE INTO " + Names.t("team_members") +
+                                " (team_subject_id, player_subject_id) VALUES (?, ?)")) {
+                    ps.setLong(1, teamSid);
+                    ps.setLong(2, playerSid);
+                    inserted = ps.executeUpdate(); // 1=追加 / 0=既存
+                }
+                con.commit();
+                return inserted == 1;
+            } catch (SQLException | RuntimeException ex) {
+                con.rollback();
+                throw ex;
+            } finally {
+                con.setAutoCommit(true);
+            }
+        } catch (SQLException e) { throw new RuntimeException(e); }
+    }
+
+    @Override
+    public boolean removeMember(String teamID, String playerUuid) {
+        try (Connection con = ds.getConnection()) {
+            Long teamSid = getTeamSubjectId(con, teamID);
+            if (teamSid == null) return false;
+            Long playerSid = findSubjectId(con, "PLAYER", playerUuid);
+            if (playerSid == null) return false;
+
+            try (PreparedStatement ps = con.prepareStatement(
+                    "DELETE FROM " + Names.t("team_members") +
+                            " WHERE team_subject_id=? AND player_subject_id=?")) {
+                ps.setLong(1, teamSid);
+                ps.setLong(2, playerSid);
+                return ps.executeUpdate() > 0;
+            }
+        } catch (SQLException e) { throw new RuntimeException(e); }
+    }
+
+    @Override
+    public boolean isMember(String teamID, String playerUuid) {
+        try (Connection con = ds.getConnection()) {
+            Long teamSid = getTeamSubjectId(con, teamID);
+            if (teamSid == null) return false;
+            Long playerSid = findSubjectId(con, "PLAYER", playerUuid);
+            if (playerSid == null) return false;
+
+            try (PreparedStatement ps = con.prepareStatement(
+                    "SELECT 1 FROM " + Names.t("team_members") +
+                            " WHERE team_subject_id=? AND player_subject_id=?")) {
+                ps.setLong(1, teamSid);
+                ps.setLong(2, playerSid);
+                try (ResultSet rs = ps.executeQuery()) { return rs.next(); }
+            }
+        } catch (SQLException e) { throw new RuntimeException(e); }
+    }
+
+    @Override
+    public java.util.List<String> listMemberIds(String teamID) {
+        String sql = "SELECT s.subject_key " +
+                "FROM " + Names.t("team_members") + " tm " +
+                "JOIN " + Names.t("subjects") + " s ON s.id=tm.player_subject_id " +
+                "WHERE tm.team_subject_id = (" +
+                "  SELECT id FROM " + Names.t("subjects") + " WHERE type='TEAM' AND subject_key=?" +
+                ") ORDER BY s.subject_key";
+        java.util.List<String> out = new java.util.ArrayList<>();
+        try (Connection con = ds.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, teamID);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) out.add(rs.getString(1));
+            }
+        } catch (SQLException e) { throw new RuntimeException(e); }
+        return out;
+    }
+
+    @Override
+    public List<OfflinePlayer> listMemberPlayers(String teamID) {
+        // DBは既存メソッドを再利用
+        List<String> ids = listMemberIds(teamID);
+
+        List<OfflinePlayer> out = new ArrayList<>(ids.size());
+        for (String id : ids) {
+            try {
+                UUID uuid = UUID.fromString(id);              // UUID文字列前提
+                out.add(Bukkit.getOfflinePlayer(uuid));
+            } catch (IllegalArgumentException ex) {
+            }
+        }
+        return out;
+    }
+
+    @Override
+    public int countMembers(String teamID) {
+        String sql = "SELECT COUNT(*) " +
+                "FROM " + Names.t("team_members") + " tm " +
+                "WHERE tm.team_subject_id = (" +
+                "  SELECT id FROM " + Names.t("subjects") + " WHERE type='TEAM' AND subject_key=?" +
+                ")";
+        try (Connection con = ds.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, teamID);
+            try (ResultSet rs = ps.executeQuery()) { return rs.next() ? rs.getInt(1) : 0; }
+        } catch (SQLException e) { throw new RuntimeException(e); }
+    }
+
+    @Override
+    public java.util.List<String> listTeamsOfPlayer(String playerUuid) {
+        String sql = "SELECT s.subject_key " +
+                "FROM " + Names.t("team_members") + " tm " +
+                "JOIN " + Names.t("subjects") + " s ON s.id = tm.team_subject_id " +
+                "WHERE tm.player_subject_id = (" +
+                "  SELECT id FROM " + Names.t("subjects") + " WHERE type='PLAYER' AND subject_key=?" +
+                ") ORDER BY s.subject_key";
+        java.util.List<String> out = new java.util.ArrayList<>();
+        try (Connection con = ds.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, playerUuid);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) out.add(rs.getString(1));
+            }
+        } catch (SQLException e) { throw new RuntimeException(e); }
+        return out;
     }
 
 }

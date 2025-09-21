@@ -1,7 +1,9 @@
 package dev.felnull.pointed.teams.manager;
 
 import dev.felnull.pointed.core.database.data.RankRow;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
@@ -18,7 +20,7 @@ public interface TeamManager {
 
     // 初回準備
     //TeamIDはCoreで言うsubjectKey
-    void createTeam(String teamID, String scope, String displayName);
+
 
     // ランキング
     java.util.List<RankRow> getTeamDailyTop(String scope, java.time.LocalDate day, int limit);
@@ -26,7 +28,9 @@ public interface TeamManager {
     java.util.List<RankRow> getTeamGlobalTop(String scope, int limit);
 
     // メタと表示名の管理
-    void upsertTeam(String teamID, String scope, String displayName, String color, Integer sortOrder, Boolean active);
+    //TeamIDはCoreで言うsubjectKey
+    void upsertTeam(String teamID, String displayName, String color, Integer sortOrder, Boolean active);
+
     void setTeamDisplayName(String teamID, String newName);
     void setTeamColor(String teamID, String color);
     void setTeamSortOrder(String teamID, int sortOrder);
@@ -44,4 +48,16 @@ public interface TeamManager {
     // 非同期にバー/凡例を生成して返す
     void sendBarAndLegendAsync(CommandSender sender,
                                String scope, int width, java.util.List<String> order);
+
+    // ===== メンバー管理（複数所属OK） =====
+    boolean addMember(String teamID, String playerUuid, String playerName); // 既に居れば false（INSERT IGNORE）
+    boolean removeMember(String teamID, String playerUuid);                 // 無ければ false
+    boolean isMember(String teamID, String playerUuid);
+
+    List<String> listMemberIds(String teamID);  // そのチームに所属するプレイヤーUUID一覧
+    List<OfflinePlayer> listMemberPlayers(String teamID);
+    int countMembers(String teamID);            // 人数
+
+    List<String> listTeamsOfPlayer(String playerUuid); // プレイヤーが所属しているチームID一覧
+
 }

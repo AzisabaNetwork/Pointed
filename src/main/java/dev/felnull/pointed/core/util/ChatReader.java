@@ -33,7 +33,13 @@ public class ChatReader {
 
         switch (type) {
             //ChatContentTypeがDisplay_Nameの場合の処理
-
+            /**
+             * ========================================================
+             *
+             * Conversationを使うように変更するべし
+             *
+             * ========================================================
+             */
         }
 
         unregisterNextChat(p);

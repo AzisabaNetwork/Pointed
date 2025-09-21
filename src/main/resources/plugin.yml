@@ -9,6 +9,10 @@ commands:
     permission: pointed.admin
     description: Pointed commands
     usage: "/pt <getnow|gettotal|get|add|sub|set|rank>"
+  ptteam:
+    permission: pointed.admin
+    description: Pointed commands
+    usage: "/ptteam <>"
 permissions:
   pointed.admin:
     default: op

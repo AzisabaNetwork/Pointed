@@ -195,7 +195,7 @@ public final class TableInitializer {
         }
     }
 
-    private static void ensurePrimaryKey(Connection conn, String baseTable, String[] columns) {
+    public static void ensurePrimaryKey(Connection conn, String baseTable, String[] columns) {
         String phys = Names.phys(baseTable);
         try {
             Set<String> existing = new LinkedHashSet<String>();
