@@ -123,9 +123,9 @@ public final class PointServiceImpl implements PointService {
             ps.setString(1, subjectType);
             ps.setString(2, subjectKey);
             ps.setString(3, scope);
-            ResultSet rs = ps.executeQuery();
-            try { return rs.next() ? rs.getLong(1) : 0L; }
-            finally { rs.close(); }
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getLong(1) : 0L;
+            }
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -142,9 +142,9 @@ public final class PointServiceImpl implements PointService {
             ps.setString(1, subjectType);
             ps.setString(2, subjectKey);
             ps.setString(3, scope);
-            ResultSet rs = ps.executeQuery();
-            try { return rs.next() ? rs.getLong(1) : 0L; }
-            finally { rs.close(); }
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getLong(1) : 0L;
+            }
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -161,11 +161,10 @@ public final class PointServiceImpl implements PointService {
             ps.setString(1, subjectType);
             ps.setString(2, subjectKey);
             ps.setString(3, scope);
-            ResultSet rs = ps.executeQuery();
-            try {
-                if (rs.next()) return new long[]{ rs.getLong(1), rs.getLong(2) };
-                return new long[]{ 0L, 0L };
-            } finally { rs.close(); }
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return new long[]{rs.getLong(1), rs.getLong(2)};
+                return new long[]{0L, 0L};
+            }
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -273,7 +272,7 @@ public final class PointServiceImpl implements PointService {
 
     @Override
     public List<RankRow> getDailyTop(String subjectType, String scope, LocalDate day, int limit) {
-        List<RankRow> list = new ArrayList<RankRow>();
+        List<RankRow> list = new ArrayList<>();
         try (Connection con = ds.getConnection();
              PreparedStatement ps = con.prepareStatement(
                      "SELECT s.type, s.subject_key, s.name, d.gained, ab.now_point, ab.total_point " +
@@ -301,7 +300,7 @@ public final class PointServiceImpl implements PointService {
 
     @Override
     public List<RankRow> getWeeklyTop(String subjectType, String scope, LocalDate startInclusive, LocalDate endInclusive, int limit) {
-        List<RankRow> list = new ArrayList<RankRow>();
+        List<RankRow> list = new ArrayList<>();
         try (Connection con = ds.getConnection();
              PreparedStatement ps = con.prepareStatement(
                      "SELECT s.type, s.subject_key, s.name, SUM(d.gained) AS week_gained, ab.now_point, ab.total_point " +
@@ -331,7 +330,7 @@ public final class PointServiceImpl implements PointService {
 
     @Override
     public List<RankRow> getGlobalTop(String subjectType, String scope, int limit) {
-        List<RankRow> list = new ArrayList<RankRow>();
+        List<RankRow> list = new ArrayList<>();
         try (Connection con = ds.getConnection();
              PreparedStatement ps = con.prepareStatement(
                      "SELECT s.type, s.subject_key, s.name, ab.total_point, ab.now_point, ab.total_point " +

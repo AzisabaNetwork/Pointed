@@ -75,7 +75,7 @@ public class TeamManagerUtil {
         for (String team : keys) {
             if (!points.containsKey(team)) continue;
             long v = points.get(team);
-            double pct = sum == 0 ? 0 : (100.0 * v / sum);
+            double pct = 100.0 * v / sum;
             String color = colorByTeam.getOrDefault(team, "&f");
             parts.add(color + team + " " + Math.round(pct) + "%&7");
         }

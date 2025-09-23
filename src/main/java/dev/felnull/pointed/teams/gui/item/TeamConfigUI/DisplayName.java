@@ -1,13 +1,11 @@
 package dev.felnull.pointed.teams.gui.item.TeamConfigUI;
 
 import dev.felnull.bettergui.core.GUIItem;
-import dev.felnull.bettergui.core.GUIPage;
 import dev.felnull.bettergui.core.InventoryGUI;
 import dev.felnull.pointed.Pointed;
 import dev.felnull.pointed.core.util.Util;
 import dev.felnull.pointed.teams.gui.page.TeamConfigGUI;
-import dev.felnull.pointed.teams.manager.TeamData;
-import dev.felnull.pointed.teams.manager.TeamManager;
+import dev.felnull.pointed.teams.manager.reward.data.TeamData;
 import net.kyori.adventure.sound.Sound;
 import net.wesjd.anvilgui.AnvilGUI;
 import org.bukkit.Material;

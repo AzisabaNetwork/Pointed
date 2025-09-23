@@ -4,7 +4,7 @@ import dev.felnull.bettergui.core.GUIItem;
 import dev.felnull.bettergui.core.InventoryGUI;
 import dev.felnull.pointed.core.util.Util;
 import dev.felnull.pointed.teams.gui.page.TeamConfigGUI;
-import dev.felnull.pointed.teams.manager.TeamData;
+import dev.felnull.pointed.teams.manager.reward.data.TeamData;
 import net.kyori.adventure.sound.Sound;
 import org.bukkit.Material;
 import org.bukkit.event.inventory.InventoryClickEvent;

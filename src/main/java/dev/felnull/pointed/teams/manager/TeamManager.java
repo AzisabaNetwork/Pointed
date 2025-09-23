@@ -1,9 +1,9 @@
 package dev.felnull.pointed.teams.manager;
 
 import dev.felnull.pointed.core.database.data.RankRow;
+import dev.felnull.pointed.teams.manager.reward.data.TeamData;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 

@@ -62,12 +62,6 @@ public final class TableInitializer {
                     " id BIGINT AUTO_INCREMENT PRIMARY KEY" +
                     ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
-            // ====Team====
-            // team_meta（骨格）
-            stmt.executeUpdate("CREATE TABLE IF NOT EXISTS " + Names.t("team_meta") + " (" +
-                    " subject_id BIGINT NOT NULL," +
-                    " PRIMARY KEY (subject_id)" +
-                    ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
             // ========== 2) 不足カラムを追加 ==========
 
@@ -116,12 +110,6 @@ public final class TableInitializer {
             addColumnIfNotExists(conn, "point_ledger", "ref_id",     "VARCHAR(64)");
             addColumnIfNotExists(conn, "point_ledger", "created_at", "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP");
 
-            // ==== Team ====
-            // team_meta
-            addColumnIfNotExists(conn, "team_meta", "color_code", "VARCHAR(16) NOT NULL");
-            addColumnIfNotExists(conn, "team_meta", "sort_order", "INT NOT NULL DEFAULT 0");
-            addColumnIfNotExists(conn, "team_meta", "active",     "TINYINT(1) NOT NULL DEFAULT 1");
-
             // ========== 3) インデックス・制約 ==========
 
             ensureUniqueIndex(conn, "subjects", "uniq_subject_key", new String[]{"type","subject_key"});
@@ -157,10 +145,6 @@ public final class TableInitializer {
             ensureForeignKey(conn, "team_meta", "fk_tm_subject",
                     "subject_id", "subjects", "id", "CASCADE", "CASCADE");
 
-            // 並び順・有効/無効フィルタの補助INDEX
-            ensureIndex(conn, "team_meta", "idx_tm_sort",   new String[]{"sort_order"});
-            ensureIndex(conn, "team_meta", "idx_tm_active", new String[]{"active"});
-
             LOGGER.info("[Pointed] テーブル初期化完了！");
 
         } catch (SQLException e) {
@@ -173,7 +157,7 @@ public final class TableInitializer {
     public static void addColumnIfNotExists(Connection conn, String baseTable, String columnName, String columnDefinition) {
         String phys = Names.phys(baseTable); // バッククォートなし実名
         try {
-            boolean exists = false;
+            boolean exists;
             DatabaseMetaData md = conn.getMetaData();
             try (ResultSet rs = md.getColumns(null, null, phys, columnName)) {
                 exists = rs.next();
@@ -198,12 +182,12 @@ public final class TableInitializer {
     public static void ensurePrimaryKey(Connection conn, String baseTable, String[] columns) {
         String phys = Names.phys(baseTable);
         try {
-            Set<String> existing = new LinkedHashSet<String>();
+            Set<String> existing = new LinkedHashSet<>();
             DatabaseMetaData md = conn.getMetaData();
             try (ResultSet rs = md.getPrimaryKeys(null, null, phys)) {
                 while (rs.next()) existing.add(rs.getString("COLUMN_NAME").toLowerCase());
             }
-            Set<String> target = new LinkedHashSet<String>();
+            Set<String> target = new LinkedHashSet<>();
             for (String c : columns) target.add(c.toLowerCase());
             if (existing.equals(target)) return;
             if (!existing.isEmpty()) {
@@ -220,7 +204,7 @@ public final class TableInitializer {
         }
     }
 
-    private static void ensureUniqueIndex(Connection conn, String baseTable, String indexName, String[] columns) {
+    public static void ensureUniqueIndex(Connection conn, String baseTable, String indexName, String[] columns) {
         String phys = Names.phys(baseTable);
         try {
             if (indexExists(conn, phys, indexName)) return;

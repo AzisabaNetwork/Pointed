@@ -3,10 +3,12 @@ package dev.felnull.pointed.teams.manager;
 import dev.felnull.pointed.Pointed;
 import dev.felnull.pointed.core.database.Db;
 import dev.felnull.pointed.core.database.Names;
+import dev.felnull.pointed.core.database.api.PointService;
 import dev.felnull.pointed.core.database.api.PointServiceImpl;
 import dev.felnull.pointed.core.database.api.SubjectType;
 import dev.felnull.pointed.core.database.data.RankRow;
 import dev.felnull.pointed.core.util.Util;
+import dev.felnull.pointed.teams.manager.reward.data.TeamData;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
@@ -26,7 +28,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ForkJoinPool;
 
 public class TeamManagerImpl implements TeamManager{
-    PointServiceImpl ptService = Pointed.pointService;
+    PointServiceImpl ptService = Pointed.getInstance().getPointService();
     String subjectType = SubjectType.TEAM.name();
     DataSource ds = Db.get();
     private final Executor executor = ForkJoinPool.commonPool();
@@ -297,19 +299,17 @@ public class TeamManagerImpl implements TeamManager{
     @Override
     public void sendBarAndLegendAsync(CommandSender sender,
                                       String scope, int width, java.util.List<String> order) {
-        loadVizDataAsync(scope).whenComplete((data, err) -> {
-            org.bukkit.Bukkit.getScheduler().runTask(Pointed.getInstance(), () -> {
-                if (err != null) {
-                    sender.sendMessage(Util.f("&c[Error] 可視化生成に失敗しました: &7{0}", err.getMessage()));
-                    return;
-                }
-                String bar    = TeamManagerUtil.renderBar(data.points, width, data.colors, order);
-                String legend = TeamManagerUtil.renderHanrei(data.points, data.colors, order);
+        loadVizDataAsync(scope).whenComplete((data, err) -> Bukkit.getScheduler().runTask(Pointed.getInstance(), () -> {
+            if (err != null) {
+                sender.sendMessage(Util.f("&c[Error] 可視化生成に失敗しました: &7{0}", err.getMessage()));
+                return;
+            }
+            String bar    = TeamManagerUtil.renderBar(data.points, width, data.colors, order);
+            String legend = TeamManagerUtil.renderHanrei(data.points, data.colors, order);
 
-                sender.sendMessage(bar);
-                sender.sendMessage(legend);
-            });
-        });
+            sender.sendMessage(bar);
+            sender.sendMessage(legend);
+        }));
     }
 
     // === ヘルパ（このクラス内にprivateで定義） ===
@@ -440,7 +440,7 @@ public class TeamManagerImpl implements TeamManager{
             try {
                 UUID uuid = UUID.fromString(id);              // UUID文字列前提
                 out.add(Bukkit.getOfflinePlayer(uuid));
-            } catch (IllegalArgumentException ex) {
+            } catch (IllegalArgumentException ignored) {
             }
         }
         return out;

@@ -4,15 +4,12 @@ import dev.felnull.bettergui.core.GUIItem;
 import dev.felnull.bettergui.core.InventoryGUI;
 import dev.felnull.pointed.Pointed;
 import dev.felnull.pointed.core.util.Util;
-import dev.felnull.pointed.teams.manager.TeamData;
-import dev.felnull.pointed.teams.manager.TeamManager;
+import dev.felnull.pointed.teams.manager.reward.data.TeamData;
 import net.kyori.adventure.sound.Sound;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
-
-import java.util.UUID;
 
 public class Member extends GUIItem {
     TeamData teamData;

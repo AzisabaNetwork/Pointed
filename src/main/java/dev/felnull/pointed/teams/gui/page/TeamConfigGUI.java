@@ -9,15 +9,12 @@ import dev.felnull.pointed.teams.gui.item.TeamConfigUI.DisplayName;
 import dev.felnull.pointed.teams.gui.item.TeamConfigUI.Member;
 import dev.felnull.pointed.teams.gui.item.TeamConfigUI.SelectColor;
 import dev.felnull.pointed.teams.gui.item.TeamConfigUI.TeamPreview;
-import dev.felnull.pointed.teams.manager.TeamData;
+import dev.felnull.pointed.teams.manager.reward.data.TeamData;
 import dev.felnull.pointed.teams.manager.TeamManager;
-import dev.felnull.pointed.teams.manager.TeamManagerImpl;
 import org.bukkit.Bukkit;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.Inventory;
 import org.jetbrains.annotations.NotNull;
-
-import java.util.Optional;
 
 public class TeamConfigGUI extends PointedGUIPage {
     TeamData teamData;

@@ -4,7 +4,7 @@ import dev.felnull.bettergui.core.InventoryGUI;
 import dev.felnull.pointed.core.gui.PointedGUIPage;
 import dev.felnull.pointed.core.util.Util;
 import dev.felnull.pointed.teams.gui.item.SelectColor.NamedColor;
-import dev.felnull.pointed.teams.manager.TeamData;
+import dev.felnull.pointed.teams.manager.reward.data.TeamData;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Material;
 import org.bukkit.inventory.Inventory;

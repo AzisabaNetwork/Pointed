@@ -9,7 +9,7 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
-import org.bukkit.plugin.Plugin;
+import org.jetbrains.annotations.NotNull;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -18,12 +18,10 @@ import java.util.UUID;
 
 public class PtCommand implements CommandExecutor, TabCompleter {
     private final PointService svc;
-    private final Plugin plugin;
     private final ZoneId zoneId;
 
-    public PtCommand(PointService svc, Plugin plugin, ZoneId zoneId) {
+    public PtCommand(PointService svc, ZoneId zoneId) {
         this.svc = svc;
-        this.plugin = plugin;
         this.zoneId = zoneId;
     }
 
@@ -45,7 +43,7 @@ public class PtCommand implements CommandExecutor, TabCompleter {
     }
 
     @Override
-    public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
+    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String label, String[] args) {
         if (args.length == 0) {
             sender.sendMessage(Util.f("&e/pt <getnow|gettotal|get|add|sub|set|rank>"));
             return true;
@@ -244,7 +242,7 @@ public class PtCommand implements CommandExecutor, TabCompleter {
     }
 
     @Override
-    public List<String> onTabComplete(CommandSender sender, Command cmd, String label, String[] args) {
+    public List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String label, String[] args) {
         if (args.length == 1) {
             return List.of("getnow", "gettotal", "get", "add", "sub", "set", "rank");
         }
