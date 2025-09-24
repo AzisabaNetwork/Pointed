@@ -2,6 +2,8 @@ package dev.felnull.pointed.core.database.api;
 
 import dev.felnull.pointed.core.database.data.RankRow;
 
+import java.util.List;
+
 public interface PointService {
 
     //subjectType = "PLAYER"とか"TEAM"とか
@@ -29,4 +31,7 @@ public interface PointService {
 
     //すべての scope で subject を完全削除（accounts/履歴を消し、subjects も削除
     boolean deleteSubjectEverywhere(String subjectType, String subjectKey);
+
+    List<String> listScopes(String subjectType, String subjectKey);
+    List<String> listAllScopes();
 }

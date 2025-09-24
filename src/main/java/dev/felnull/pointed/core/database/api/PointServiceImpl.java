@@ -443,4 +443,42 @@ public final class PointServiceImpl implements PointService {
             throw new RuntimeException(e);
         }
     }
+
+    @Override
+    public List<String> listScopes(String subjectType, String subjectKey) {
+        List<String> scopes = new ArrayList<>();
+        try (Connection con = ds.getConnection();
+             PreparedStatement ps = con.prepareStatement(
+                     "SELECT a.scope FROM " + Names.t("accounts") + " a " +
+                             "JOIN " + Names.t("subjects") + " s ON s.id=a.subject_id " +
+                             "WHERE s.type=? AND s.subject_key=?")) {
+            ps.setString(1, subjectType);
+            ps.setString(2, subjectKey);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    scopes.add(rs.getString(1));
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return scopes;
+    }
+
+    @Override
+    public List<String> listAllScopes() {
+        List<String> scopes = new ArrayList<>();
+        try (Connection con = ds.getConnection();
+             PreparedStatement ps = con.prepareStatement(
+                     "SELECT DISTINCT scope FROM " + Names.t("accounts"))) {
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    scopes.add(rs.getString(1));
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return scopes;
+    }
 }

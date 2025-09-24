@@ -1,8 +1,11 @@
 package dev.felnull.pointed.core.commands;
 
+import dev.felnull.pointed.Pointed;
+import dev.felnull.pointed.core.database.api.PointServiceImpl;
 import dev.felnull.pointed.core.database.data.RankRow;
 import dev.felnull.pointed.core.database.api.PointService;
 import dev.felnull.pointed.core.util.Util;
+import dev.felnull.pointed.teams.manager.reward.RewardAdminService;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.Command;
@@ -231,9 +234,16 @@ public class PtCommand implements CommandExecutor, TabCompleter {
                             shown++;
                         }
                     }
-
                     default -> sender.sendMessage(Util.f("&e/pt rank <daily|weekly|global> <PLAYER|TEAM|SYSTEM> <スコープ> [...]"));
                 }
+            }
+            case "scope" -> {
+                PointServiceImpl pointService = Pointed.getInstance().getPointService();
+                sender.sendMessage("====Scope一覧====");
+                for(String scope : pointService.listAllScopes()){
+                    sender.sendMessage("・ " + scope);
+                }
+                sender.sendMessage("=================");
             }
 
         }
@@ -244,7 +254,7 @@ public class PtCommand implements CommandExecutor, TabCompleter {
     @Override
     public List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String label, String[] args) {
         if (args.length == 1) {
-            return List.of("getnow", "gettotal", "get", "add", "sub", "set", "rank");
+            return List.of("getnow", "gettotal", "get", "add", "sub", "set", "rank", "scope");
         }
         // サブコマンド毎の type 補完
         if (args.length == 2 && List.of("getnow","gettotal","get","add","sub","set").contains(args[0].toLowerCase())) {
