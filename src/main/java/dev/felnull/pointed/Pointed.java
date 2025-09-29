@@ -45,6 +45,7 @@ public final class Pointed extends JavaPlugin {
     @Override
     public void onEnable() {
         instance = this;
+        saveDefaultConfig();
         FileConfiguration conf = getConfig();
         String prefix = conf.getString("database.table_prefix", "pointed_");
         Names.init(prefix);
@@ -58,7 +59,7 @@ public final class Pointed extends JavaPlugin {
         Bukkit.getLogger().info("Pointedが動作を開始しました");
         setupCommand();
         setupListener();
-        saveDefaultConfig();
+
         setupPlugin();
         TableInitializer.initTables();
         TeamTableInitializer.initTables();

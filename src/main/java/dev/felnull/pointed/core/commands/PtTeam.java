@@ -6,6 +6,7 @@ import dev.felnull.pointed.core.database.data.RankRow;
 import dev.felnull.pointed.core.util.Util;
 import dev.felnull.pointed.teams.gui.page.EditRewards;
 import dev.felnull.pointed.teams.gui.page.TeamConfigGUI;
+import dev.felnull.pointed.teams.manager.TeamManager;
 import dev.felnull.pointed.teams.manager.reward.RewardAdminService;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
@@ -103,6 +104,32 @@ public class PtTeam implements CommandExecutor, TabCompleter {
                     sender.sendMessage("rewardIDを数字で入力してください!!!! : " + args[1]);
                 }
             }
+            case "checkteam" -> {
+                if(sender instanceof Player){
+                    Player p = (Player) sender;
+                    sender.sendMessage("所属team一覧");
+                    for(String team : Pointed.getInstance().getTeamManager().listTeamsOfPlayer(p.getUniqueId().toString())){
+                        sender.sendMessage("ID: " + team);
+                    }
+                }
+
+            }
+            case "checkteammember" -> {
+                Player p = (Player) sender;
+                sender.sendMessage("team: WhiteRabbit");
+                int i = 0;
+                for(String team : Pointed.getInstance().getTeamManager().listMemberIds("WhiteRabbit")){
+                    sender.sendMessage(i +": Name: " + UUID.fromString(team));
+                    i++;
+                }
+                i = 0;
+                sender.sendMessage("team: BlackRabbit");
+                for(String team : Pointed.getInstance().getTeamManager().listMemberIds("BlackRabbit")){
+                    sender.sendMessage(i + ": Name: " + UUID.fromString(team));
+                    i++;
+                }
+            }
+
             default -> sender.sendMessage(Util.f("/ptteam <set> <teamID>"));
         }
 

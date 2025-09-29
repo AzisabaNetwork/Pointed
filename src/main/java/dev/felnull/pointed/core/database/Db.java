@@ -16,6 +16,7 @@ public final class Db {
         cfg.setJdbcUrl(jdbcUrl);
         cfg.setUsername(user);
         cfg.setPassword(pass);
+        cfg.setDriverClassName("dev.felnull.pointed.shaded.mariadb.jdbc.Driver");
 
         // プール設定
         cfg.setMaximumPoolSize(30);
