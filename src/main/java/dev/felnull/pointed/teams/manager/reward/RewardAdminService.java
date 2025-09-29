@@ -6,6 +6,7 @@ import dev.felnull.pointed.teams.manager.reward.data.RewardDetail;
 import dev.felnull.pointed.teams.manager.reward.data.RewardSummary;
 import org.jetbrains.annotations.Nullable;
 
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.List;
@@ -74,4 +75,7 @@ public interface RewardAdminService {
 
     /** 詳細（コマンド付き） */
     RewardDetail getRewardDetail(int rewardId, boolean onlyEnabledCommands) throws SQLException;
+
+    /** 過去にその報酬を配布したか */
+    boolean hasEverDistributedRewardToPlayer(long playerSubjectId, int rewardId) throws SQLException;
 }

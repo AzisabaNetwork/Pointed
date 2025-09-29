@@ -67,7 +67,7 @@ public class PtTeam implements CommandExecutor, TabCompleter {
                 }
             }
             case "forcegive" -> {
-                if(args.length < 2){
+                if(args.length < 3){
                     sender.sendMessage("引数が足りません");
                     return true;
                 }
@@ -85,6 +85,22 @@ public class PtTeam implements CommandExecutor, TabCompleter {
                     sender.sendMessage("数字で入力してください!!!! : " + args[2]);
                 } catch (SQLException e) {
                     throw new RuntimeException(e);
+                }
+            }
+            case "checkreward" -> {
+                if(args.length < 2){
+                    sender.sendMessage("引数が足りません");
+                    return true;
+                }
+                RewardAdminService adminService = Pointed.getInstance().getRewardAdminService();
+                try {
+                    if(adminService.rewardExists(Integer.parseInt(args[1]))){
+                        sender.sendMessage("指定したリワードは存在します");
+                    }else {
+                        sender.sendMessage("指定したリワードは存在しません...");
+                    }
+                } catch (NumberFormatException e) {
+                    sender.sendMessage("rewardIDを数字で入力してください!!!! : " + args[1]);
                 }
             }
             default -> sender.sendMessage(Util.f("/ptteam <set> <teamID>"));

@@ -1,6 +1,7 @@
 package dev.felnull.pointed.teams.manager.reward.impl;
 
 import dev.felnull.pointed.Pointed;
+import dev.felnull.pointed.core.database.Db;
 import dev.felnull.pointed.core.database.Names;
 import dev.felnull.pointed.teams.manager.reward.RankingService;
 import dev.felnull.pointed.teams.manager.reward.RewardAdminService;
@@ -763,7 +764,7 @@ public class RewardAdminServiceImpl implements RewardAdminService {
 
     // ==== 存在確認（トランザクション版・接続使い回し）====
     public boolean rewardExists(Connection con, long rewardId) throws SQLException {
-        final String sql = "SELECT 1 FROM rewards WHERE id = ? LIMIT 1";
+        final String sql = "SELECT 1 FROM " + Names.t("rewards") + " WHERE id = ? LIMIT 1";
         try (PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setLong(1, rewardId);
             try (ResultSet rs = ps.executeQuery()) {
@@ -774,9 +775,27 @@ public class RewardAdminServiceImpl implements RewardAdminService {
 
     // もし名前で唯一ならこっちも（任意）
     public boolean rewardExistsByName(Connection con, String name) throws SQLException {
-        final String sql = "SELECT 1 FROM rewards WHERE name = ? LIMIT 1";
+        final String sql = "SELECT 1 FROM " + Names.t("rewards") + " WHERE name = ? LIMIT 1";
         try (PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, name);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+        }
+    }
+
+    @Override
+    public boolean hasEverDistributedRewardToPlayer(
+            long playerSubjectId,
+            int rewardId
+    ) throws SQLException {
+        Connection con = Db.get().getConnection();
+        final String sql =
+                "SELECT 1 FROM " + Names.t("reward_dispatch_log") +
+                        " WHERE player_subject_id = ? AND reward_id = ? LIMIT 1";
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setLong(1, playerSubjectId);
+            ps.setInt(2, rewardId);
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next();
             }
