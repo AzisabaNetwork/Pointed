@@ -24,6 +24,7 @@ public interface RewardAdminService {
     void moveCommand(int rewardId, int fromIdx, int toIdx) throws SQLException;
     void setCommandEnabled(int rewardId, int idx, boolean enabled) throws SQLException;
     void updateCommandText(int rewardId, int idx, String newText) throws SQLException;
+    boolean rewardExists(long rewardId);
 
     // ===== Reward =====
     /**
