@@ -7,8 +7,6 @@ import dev.felnull.pointed.teams.manager.reward.RankingService;
 import dev.felnull.pointed.teams.manager.reward.RewardAdminService;
 import dev.felnull.pointed.teams.manager.reward.data.*;
 import org.bukkit.Bukkit;
-import org.bukkit.OfflinePlayer;
-import org.jetbrains.annotations.Nullable;
 
 import javax.sql.DataSource;
 import java.sql.*;
@@ -785,11 +783,33 @@ public class RewardAdminServiceImpl implements RewardAdminService {
     }
 
     @Override
-    public boolean hasEverDistributedRewardToPlayer(
-            long playerSubjectId,
-            int rewardId
-    ) throws SQLException {
-        Connection con = Db.get().getConnection();
+    public boolean hasEverDistributedRewardToPlayerByUuid(UUID playerUuid, int rewardId) {
+        final String subjectType = "PLAYER";
+        final String subjectKey = playerUuid.toString();
+
+        try (Connection con = Db.get().getConnection()) {
+            // subjects.id を拾う（無ければ未配布扱い）
+            final String q = "SELECT id FROM " + Names.t("subjects") +
+                    " WHERE type = ? AND subject_key = ? LIMIT 1";
+            Long subjectId = null;
+            try (PreparedStatement ps = con.prepareStatement(q)) {
+                ps.setString(1, subjectType);
+                ps.setString(2, subjectKey);
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) subjectId = rs.getLong(1);
+                }
+            }
+            if (subjectId == null) return false;
+            return hasEverDistributedRewardToPlayer(con, subjectId, rewardId);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    // === Tx内で使える版（同一接続を使い回す用）===
+    public boolean hasEverDistributedRewardToPlayer(Connection con,
+                                                    long playerSubjectId,
+                                                    int rewardId) throws SQLException {
         final String sql =
                 "SELECT 1 FROM " + Names.t("reward_dispatch_log") +
                         " WHERE player_subject_id = ? AND reward_id = ? LIMIT 1";
@@ -799,6 +819,14 @@ public class RewardAdminServiceImpl implements RewardAdminService {
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next();
             }
+        }
+    }
+
+    // === 既存シグネチャ互換の非Tx版（内部で接続取得）===
+    @Override
+    public boolean hasEverDistributedRewardToPlayer(long playerSubjectId, int rewardId) throws SQLException {
+        try (Connection con = Db.get().getConnection()) {
+            return hasEverDistributedRewardToPlayer(con, playerSubjectId, rewardId);
         }
     }
 

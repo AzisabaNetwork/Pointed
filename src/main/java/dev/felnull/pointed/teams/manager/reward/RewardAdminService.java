@@ -77,5 +77,8 @@ public interface RewardAdminService {
     RewardDetail getRewardDetail(int rewardId, boolean onlyEnabledCommands) throws SQLException;
 
     /** 過去にその報酬を配布したか */
-    boolean hasEverDistributedRewardToPlayer(long playerSubjectId, int rewardId) throws SQLException;
+    boolean hasEverDistributedRewardToPlayerByUuid(UUID playerUuid, int rewardId);
+
+    // === 既存シグネチャ互換の非Tx版（内部で接続取得）===
+    boolean hasEverDistributedRewardToPlayer(long teamId, int rewardId) throws SQLException;
 }
