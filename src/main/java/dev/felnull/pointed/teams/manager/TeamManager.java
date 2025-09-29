@@ -18,16 +18,12 @@ public interface TeamManager {
     boolean subtractTeamPt(String teamID, String scope, long amount);
     long[] setTeamPt(String teamID, String scope, long newNow);
 
-    // 初回準備
-    //TeamIDはCoreで言うsubjectKey
-
-
     // ランキング
     java.util.List<RankRow> getTeamDailyTop(String scope, java.time.LocalDate day, int limit);
     java.util.List<RankRow> getTeamWeeklyTop(String scope, java.time.LocalDate startInclusive, java.time.LocalDate endInclusive, int limit);
     java.util.List<RankRow> getTeamGlobalTop(String scope, int limit);
 
-    // メタと表示名の管理
+    // メタと表示名の管理 チーム作成
     //TeamIDはCoreで言うsubjectKey
     void upsertTeam(String teamID, String displayName, String color, Integer sortOrder, Boolean active);
 

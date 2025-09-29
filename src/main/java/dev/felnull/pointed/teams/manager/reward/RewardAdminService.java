@@ -13,7 +13,7 @@ import java.util.UUID;
 
 public interface RewardAdminService {
     // ===== rewards  =====
-    int  createReward(String displayName, int needPoint, int needMinTotal, boolean repeatable, boolean active) throws SQLException;
+    int  createReward(int rewardId, String displayName, int needPoint, int needMinTotal, boolean repeatable, boolean active) throws SQLException;
     void updateReward(int rewardId, String displayName, Integer needPoint, Integer needMinTotal, Boolean repeatable, Boolean active) throws SQLException;
     void deleteReward(int rewardId, boolean force) throws SQLException;
 

@@ -122,24 +122,32 @@ public class RewardAdminServiceImpl implements RewardAdminService {
 
     // ================== 以下、既出のAdmin（CRUD）もここに集約 ==================
     @Override
-    public int createReward(String displayName, int needPoint, int needMinTotal,
-                            boolean repeatable, boolean active) throws SQLException {
+    public int createReward(
+            int rewardId,            // ← 追加
+            String displayName,
+            int needPoint,
+            int needMinTotal,
+            boolean repeatable,
+            boolean active) throws SQLException {
+
         String sql = "INSERT INTO " + Names.t("rewards") +
-                " (display_name, need_point, need_min_total, repeatable, active) " +
-                " VALUES (?, ?, ?, ?, ?)";
+                " (id, display_name, need_point, need_min_total, repeatable, active) " +
+                " VALUES (?, ?, ?, ?, ?, ?)";
+
         try (Connection c = ds.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-            ps.setString(1, displayName);
-            ps.setInt(2, needPoint);
-            ps.setInt(3, needMinTotal);
-            ps.setBoolean(4, repeatable);
-            ps.setBoolean(5, active);
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            int i = 1;
+            ps.setInt(i++, rewardId);
+            ps.setString(i++, displayName);
+            ps.setInt(i++, needPoint);
+            ps.setInt(i++, needMinTotal);
+            ps.setBoolean(i++, repeatable);
+            ps.setBoolean(i++, active);
             ps.executeUpdate();
-            try (ResultSet rs = ps.getGeneratedKeys()) {
-                if (rs.next()) return rs.getInt(1);
-            }
+            return rewardId; // そのまま返す
+        } catch (SQLIntegrityConstraintViolationException dup) {
+            throw new SQLException("Reward ID が重複しています: " + rewardId, dup);
         }
-        throw new SQLException("Reward ID の取得に失敗しました。");
     }
 
     @Override
