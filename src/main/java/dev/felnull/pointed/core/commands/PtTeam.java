@@ -114,21 +114,7 @@ public class PtTeam implements CommandExecutor, TabCompleter {
                 }
 
             }
-            case "checkteammember" -> {
-                Player p = (Player) sender;
-                sender.sendMessage("team: WhiteRabbit");
-                int i = 0;
-                for(String team : Pointed.getInstance().getTeamManager().listMemberIds("WhiteRabbit")){
-                    sender.sendMessage(i +": Name: " + UUID.fromString(team));
-                    i++;
-                }
-                i = 0;
-                sender.sendMessage("team: BlackRabbit");
-                for(String team : Pointed.getInstance().getTeamManager().listMemberIds("BlackRabbit")){
-                    sender.sendMessage(i + ": Name: " + UUID.fromString(team));
-                    i++;
-                }
-            }
+
 
             default -> sender.sendMessage(Util.f("/ptteam <set> <teamID>"));
         }

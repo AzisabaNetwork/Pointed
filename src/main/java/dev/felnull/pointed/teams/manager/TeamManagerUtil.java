@@ -42,6 +42,8 @@ public class TeamManagerUtil {
 
         StringBuilder sb = new StringBuilder("&7[");
         int used = 0;
+        int center = width / 2;
+
         for (int i = 0; i < list.size(); i++) {
             var e = list.get(i);
             double ratio = (double) e.getValue() / sum;
@@ -52,7 +54,14 @@ public class TeamManagerUtil {
             if (len <= 0) continue;
 
             String color = colorByTeam.getOrDefault(e.getKey(), "&f");
-            sb.append(color).append(BLOCK.repeat(len));
+            for (int j = 0; j < len; j++) {
+                int pos = used - len + j;
+                if (pos == center) {
+                    sb.append("&7|"); // 中央線
+                } else {
+                    sb.append(color).append(BLOCK);
+                }
+            }
         }
         sb.append("&7]");
         return Util.f(sb.toString());
