@@ -55,8 +55,17 @@ public interface RewardAdminService {
                            RankRangeType rangeType, LocalDate fromDate, LocalDate toDate,
                            List<RankBucket> buckets) throws SQLException;
 
-    // プレイヤー/チームを直接指定して手動配布（scope=manual固定／期間なし／繰り返しOK）
+    // プレイヤーを直接指定して手動配布（scope=manual固定／期間なし／繰り返しOK）
     void dispatchManual(UUID playerUuid, String playerName, int rewardId) throws SQLException;
+
+    /** チーム全員を配布キューに積む（受け取りはログイン時 or /reward claim） */
+    void enqueueToAllTeamMembers(long teamSubjectId, String scope,
+                                 LocalDate fromDate, LocalDate toDate,
+                                 int rewardId) throws SQLException;
+
+    /** プレイヤーが保留中の報酬を受け取る（インベントリ空きは rewards.required_slots で判定） */
+    int[] claimPendingRewards(UUID playerUuid) throws SQLException;
+
 
     /**
      * 報酬一覧（ページング・検索・並び替え）。

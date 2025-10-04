@@ -5,3 +5,4 @@ database:
   user: "pointed"
   pass: "password"
   table_prefix: "pointed_"
+reward: false

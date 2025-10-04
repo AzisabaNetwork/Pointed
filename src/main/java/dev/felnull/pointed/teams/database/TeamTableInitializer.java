@@ -40,6 +40,9 @@ public class TeamTableInitializer {
                     " id BIGINT AUTO_INCREMENT PRIMARY KEY" +
                     ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
+            stmt.executeUpdate("CREATE TABLE IF NOT EXISTS " + Names.t("reward_pending_queue") +
+                    " (id BIGINT AUTO_INCREMENT PRIMARY KEY) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
 
             // ========== 2) 不足カラムを追加 ==========
             // team_meta
@@ -71,6 +74,19 @@ public class TeamTableInitializer {
                     "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP");
             addColumnIfNotExists(conn, "rewards", "updated_at",
                     "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
+            addColumnIfNotExists(conn, "rewards", "required_slots", "INT NOT NULL DEFAULT 0");
+
+            addColumnIfNotExists(conn, "reward_pending_queue", "team_subject_id",   "BIGINT NULL");
+            addColumnIfNotExists(conn, "reward_pending_queue", "scope",             "VARCHAR(64) NOT NULL");
+            addColumnIfNotExists(conn, "reward_pending_queue", "from_date",         "DATE NOT NULL");
+            addColumnIfNotExists(conn, "reward_pending_queue", "to_date",           "DATE NOT NULL");
+            addColumnIfNotExists(conn, "reward_pending_queue", "player_subject_id", "BIGINT NOT NULL");
+            addColumnIfNotExists(conn, "reward_pending_queue", "reward_id",         "INT NULL");
+            addColumnIfNotExists(conn, "reward_pending_queue", "raw_commands",      "TEXT NOT NULL");
+            addColumnIfNotExists(conn, "reward_pending_queue", "queued_at",
+                    "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP");
+            addColumnIfNotExists(conn, "reward_pending_queue", "attempts",          "INT NOT NULL DEFAULT 0");
+            addColumnIfNotExists(conn, "reward_pending_queue", "last_error",        "TEXT NULL");
 
             // ========== 3) インデックス・制約 ==========
 
@@ -122,6 +138,15 @@ public class TeamTableInitializer {
 
             ensureIndex(conn, "rewards", "idx_rewards_updated_at", new String[]{"updated_at"});
 
+            ensureForeignKey(conn, "reward_pending_queue", "fk_rpq_team",
+                    "team_subject_id", "subjects", "id", "SET NULL", "CASCADE");
+            ensureForeignKey(conn, "reward_pending_queue", "fk_rpq_player",
+                    "player_subject_id", "subjects", "id", "CASCADE", "CASCADE");
+            ensureForeignKey(conn, "reward_pending_queue", "fk_rpq_reward",
+                    "reward_id", "rewards", "id", "SET NULL", "CASCADE");
+
+            ensureIndex(conn, "reward_pending_queue", "idx_rpq_player", new String[]{"player_subject_id"});
+            ensureIndex(conn, "reward_pending_queue", "idx_rpq_scope_range", new String[]{"scope","from_date","to_date"});
 
             LOGGER.info("[Pointed] テーブル初期化完了！");
 

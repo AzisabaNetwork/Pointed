@@ -76,6 +76,7 @@ public final class Pointed extends JavaPlugin {
     public void setupCommand(){
         getCommand("pt").setExecutor(new PtCommand(pointService, zoneId));
         getCommand("ptteam").setExecutor(new PtTeam());
+        getCommand("reward").setExecutor(new RewardCommand(getRewardAdminService()));
     }
     public void setupListener(){
         Bukkit.getPluginManager().registerEvents(new ChatListener(this), this);

@@ -7,6 +7,10 @@ import dev.felnull.pointed.teams.manager.reward.RankingService;
 import dev.felnull.pointed.teams.manager.reward.RewardAdminService;
 import dev.felnull.pointed.teams.manager.reward.data.*;
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
+import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.PlayerInventory;
 
 import javax.sql.DataSource;
 import java.sql.*;
@@ -827,6 +831,198 @@ public class RewardAdminServiceImpl implements RewardAdminService {
     public boolean hasEverDistributedRewardToPlayer(long playerSubjectId, int rewardId) throws SQLException {
         try (Connection con = Db.get().getConnection()) {
             return hasEverDistributedRewardToPlayer(con, playerSubjectId, rewardId);
+        }
+    }
+
+    // ========== 4-1) 一括キュー投入 ==========
+    @Override
+    public void enqueueToAllTeamMembers(long teamSubjectId, String scope,
+                                        LocalDate fromDate, LocalDate toDate,
+                                        int rewardId) throws SQLException {
+        List<String> cmds = findEnabledCommandsByRewardId(rewardId);
+        if (cmds.isEmpty()) return;
+        String raw = String.join("\n", cmds);
+
+        final String qMembers =
+                "SELECT tm.player_subject_id " +
+                        "FROM " + Names.t("team_members") + " tm " +
+                        "WHERE tm.team_subject_id = ?";
+
+        final String insQ =
+                "INSERT INTO " + Names.t("reward_pending_queue") +
+                        " (team_subject_id, scope, from_date, to_date, player_subject_id, reward_id, raw_commands) " +
+                        " VALUES (?, ?, ?, ?, ?, ?, ?)";
+
+        try (Connection c = ds.getConnection()) {
+            c.setAutoCommit(false);
+            try (PreparedStatement psM = c.prepareStatement(qMembers);
+                 PreparedStatement psQ = c.prepareStatement(insQ)) {
+                psM.setLong(1, teamSubjectId);
+                try (ResultSet rs = psM.executeQuery()) {
+                    while (rs.next()) {
+                        int i = 1;
+                        psQ.setLong(i++, teamSubjectId);
+                        psQ.setString(i++, scope);
+                        psQ.setDate(i++, java.sql.Date.valueOf(fromDate));
+                        psQ.setDate(i++, java.sql.Date.valueOf(toDate));
+                        psQ.setLong(i++, rs.getLong(1));  // player_subject_id
+                        psQ.setInt(i++, rewardId);
+                        psQ.setString(i++, raw);
+                        psQ.addBatch();
+                    }
+                }
+                psQ.executeBatch();
+                c.commit();
+            } catch (SQLException e) { c.rollback(); throw e; }
+            finally { c.setAutoCommit(true); }
+        }
+    }
+
+    // ========== 4-2) 受け取り（ログイン時／コマンド） ==========
+    @Override
+    public int[] claimPendingRewards(UUID playerUuid) throws SQLException {
+        Player p = Bukkit.getPlayer(playerUuid);
+        if (p == null || !p.isOnline()) return new int[]{0, countPendingByUuid(playerUuid)};
+
+        try (Connection c = ds.getConnection()) {
+            Long sid = findPlayerSubjectId(c, playerUuid.toString());
+            if (sid == null) return new int[]{0, 0};
+            return tryDeliverPendingForPlayerInternal(c, p, sid);
+        }
+    }
+
+// ===== 内部：pending を読み / 実行 / ログ / 削除 =====
+
+    private record PendingRow(long id, Long teamId, String scope, LocalDate from, LocalDate to, Integer rewardId,
+                              String rawCommands, int requiredSlots) {
+    }
+
+    private int[] tryDeliverPendingForPlayerInternal(Connection c, Player p, long playerSubjectId) throws SQLException {
+        c.setAutoCommit(false);
+        int delivered = 0, remaining = 0;
+        try {
+            List<PendingRow> rows = fetchPendingRows(c, playerSubjectId);
+
+            for (PendingRow r : rows) {
+                if (!hasFreeSlots(p.getInventory(), r.requiredSlots)) {
+                    remaining++;
+                    continue;
+                }
+                // 実行 → ログ → キュー削除
+                String executed = runCommandsNow(p, r.rawCommands);
+                insertDispatchLog(c, r, playerSubjectId, executed);
+                deleteQueueRow(c, r.id);
+                delivered++;
+            }
+
+            c.commit();
+        } catch (SQLException e) {
+            c.rollback();
+            throw e;
+        } finally {
+            c.setAutoCommit(true);
+        }
+        return new int[]{delivered, remaining};
+    }
+
+    private List<PendingRow> fetchPendingRows(Connection c, long playerSubjectId) throws SQLException {
+        String q =
+                "SELECT q.id, q.team_subject_id, q.scope, q.from_date, q.to_date, " +
+                        "       q.reward_id, q.raw_commands, COALESCE(r.required_slots, 0) AS required_slots " +
+                        "FROM " + Names.t("reward_pending_queue") + " q " +
+                        "LEFT JOIN " + Names.t("rewards") + " r ON r.id = q.reward_id " +
+                        "WHERE q.player_subject_id=? " +
+                        "ORDER BY q.id ASC";
+        List<PendingRow> out = new ArrayList<>();
+        try (PreparedStatement ps = c.prepareStatement(q)) {
+            ps.setLong(1, playerSubjectId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    out.add(new PendingRow(
+                            rs.getLong("id"),
+                            (Long)rs.getObject("team_subject_id"),
+                            rs.getString("scope"),
+                            rs.getDate("from_date").toLocalDate(),
+                            rs.getDate("to_date").toLocalDate(),
+                            (Integer)rs.getObject("reward_id"),
+                            rs.getString("raw_commands"),
+                            rs.getInt("required_slots")
+                    ));
+                }
+            }
+        }
+        return out;
+    }
+
+    private static boolean hasFreeSlots(PlayerInventory inv, int need) {
+        if (need <= 0) return true;
+        int empty = 0;
+        for (ItemStack is : inv.getStorageContents()) {
+            if (is == null || is.getType() == Material.AIR) empty++;
+            if (empty >= need) return true;
+        }
+        return false;
+    }
+
+    private String runCommandsNow(Player p, String rawCommands) {
+        String playerName = p.getName();
+        StringBuilder executed = new StringBuilder();
+        for (String raw : rawCommands.split("\\n")) {
+            String cmd = raw
+                    .replace("{player}", playerName)
+                    .replace("{playerId}", p.getUniqueId().toString())
+                    .replace("{rank}", "0")
+                    .replace("{points}", "0");
+            Bukkit.dispatchCommand(Bukkit.getConsoleSender(), cmd);
+            if (executed.length() > 0) executed.append('\n');
+            executed.append(cmd);
+        }
+        return executed.toString();
+    }
+
+    private void insertDispatchLog(Connection c, PendingRow r, long playerSubjectId, String executed) throws SQLException {
+        String ins =
+                "INSERT IGNORE INTO " + Names.t("reward_dispatch_log") +
+                        " (team_subject_id, scope, from_date, to_date, player_subject_id, rank_no, points, reward_id, executed_commands) " +
+                        " VALUES (?, ?, ?, ?, ?, 0, 0, ?, ?)";
+        try (PreparedStatement ps = c.prepareStatement(ins)) {
+            int i = 1;
+            if (r.teamId == null) ps.setNull(i++, Types.BIGINT); else ps.setLong(i++, r.teamId);
+            ps.setString(i++, r.scope);
+            ps.setDate(i++, java.sql.Date.valueOf(r.from));
+            ps.setDate(i++, java.sql.Date.valueOf(r.to));
+            ps.setLong(i++, playerSubjectId);
+            if (r.rewardId == null) ps.setNull(i++, Types.INTEGER); else ps.setInt(i++, r.rewardId);
+            ps.setString(i++, executed);
+            ps.executeUpdate();
+        }
+    }
+
+    private void deleteQueueRow(Connection c, long id) throws SQLException {
+        try (PreparedStatement ps = c.prepareStatement(
+                "DELETE FROM " + Names.t("reward_pending_queue") + " WHERE id=?")) {
+            ps.setLong(1, id);
+            ps.executeUpdate();
+        }
+    }
+
+    private int countPendingByUuid(UUID uuid) throws SQLException {
+        try (Connection c = ds.getConnection()) {
+            Long sid = findPlayerSubjectId(c, uuid.toString());
+            if (sid == null) return 0;
+            try (PreparedStatement ps = c.prepareStatement(
+                    "SELECT COUNT(*) FROM " + Names.t("reward_pending_queue") + " WHERE player_subject_id=?")) {
+                ps.setLong(1, sid);
+                try (ResultSet rs = ps.executeQuery()) { return rs.next() ? rs.getInt(1) : 0; }
+            }
+        }
+    }
+
+    private Long findPlayerSubjectId(Connection c, String uuid) throws SQLException {
+        try (PreparedStatement ps = c.prepareStatement(
+                "SELECT id FROM " + Names.t("subjects") + " WHERE type='PLAYER' AND subject_key=?")) {
+            ps.setString(1, uuid);
+            try (ResultSet rs = ps.executeQuery()) { return rs.next() ? rs.getLong(1) : null; }
         }
     }
 
