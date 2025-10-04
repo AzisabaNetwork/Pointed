@@ -1026,4 +1026,29 @@ public class RewardAdminServiceImpl implements RewardAdminService {
         }
     }
 
+    @Override
+    public void setRequiredSlots(int rewardId, int requiredSlots) throws SQLException {
+        if (requiredSlots < 0) throw new SQLException("required_slots must be >= 0");
+        try (Connection c = ds.getConnection();
+             PreparedStatement ps = c.prepareStatement(
+                     "UPDATE " + Names.t("rewards") + " SET required_slots=? WHERE id=?")) {
+            ps.setInt(1, requiredSlots);
+            ps.setInt(2, rewardId);
+            int n = ps.executeUpdate();
+            if (n == 0) throw new SQLException("Reward not found: id=" + rewardId);
+        }
+    }
+
+    @Override
+    public Integer getRequiredSlots(int rewardId) throws SQLException {
+        try (Connection c = ds.getConnection();
+             PreparedStatement ps = c.prepareStatement(
+                     "SELECT required_slots FROM " + Names.t("rewards") + " WHERE id=?")) {
+            ps.setInt(1, rewardId);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getInt(1) : null;
+            }
+        }
+    }
+
 }

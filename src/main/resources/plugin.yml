@@ -13,6 +13,11 @@ commands:
     permission: pointed.admin
     description: Pointed commands
     usage: "/ptteam <>"
+  reward:
+    permission: pointed.player
+
 permissions:
   pointed.admin:
     default: op
+  pointed.player:
+    default: true

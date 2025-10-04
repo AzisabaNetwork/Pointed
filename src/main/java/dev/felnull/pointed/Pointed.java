@@ -7,6 +7,7 @@ import dev.felnull.pointed.core.database.Names;
 import dev.felnull.pointed.core.database.api.PointService;
 import dev.felnull.pointed.core.database.api.PointServiceImpl;
 import dev.felnull.pointed.core.listener.ChatListener;
+import dev.felnull.pointed.core.listener.RewardPendingAutoDeliverListener;
 import dev.felnull.pointed.core.util.ChatReader;
 import dev.felnull.pointed.teams.database.TeamTableInitializer;
 import dev.felnull.pointed.teams.manager.TeamManager;
@@ -80,6 +81,7 @@ public final class Pointed extends JavaPlugin {
     }
     public void setupListener(){
         Bukkit.getPluginManager().registerEvents(new ChatListener(this), this);
+        Bukkit.getPluginManager().registerEvents(new RewardPendingAutoDeliverListener(getRewardAdminService()), this);
     }
     public void setupPlugin(){
     }

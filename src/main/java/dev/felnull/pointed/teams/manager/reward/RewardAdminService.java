@@ -26,6 +26,11 @@ public interface RewardAdminService {
     void setCommandEnabled(int rewardId, int idx, boolean enabled) throws SQLException;
     void updateCommandText(int rewardId, int idx, String newText) throws SQLException;
     boolean rewardExists(long rewardId);
+    /** rewards.required_slots を更新（0以上） */
+    void setRequiredSlots(int rewardId, int requiredSlots) throws SQLException;
+
+    /** rewards.required_slots を取得（null=存在しない） */
+    Integer getRequiredSlots(int rewardId) throws SQLException;
 
     // ===== Reward =====
     /**

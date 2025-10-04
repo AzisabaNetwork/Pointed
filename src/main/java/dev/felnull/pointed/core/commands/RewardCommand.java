@@ -28,8 +28,13 @@ public class RewardCommand implements CommandExecutor {
         if (args.length == 1 && args[0].equalsIgnoreCase("claim")) {
             Bukkit.getScheduler().runTaskAsynchronously(Pointed.getInstance(), () -> {
                 try {
-                    int[] res = admin.claimPendingRewards(p.getUniqueId());
+                    // メインスレッドで claimPendingRewards を実行して結果を受け取る
+                    int[] res = Bukkit.getScheduler()
+                            .callSyncMethod(Pointed.getInstance(), () -> admin.claimPendingRewards(p.getUniqueId()))
+                            .get(); // ここは今の非同期スレッドで待つのでサーバはブロックしない
+
                     int delivered = res[0], remaining = res[1];
+                    // プレイヤーへのメッセージ送信はメインに戻す
                     Bukkit.getScheduler().runTask(Pointed.getInstance(), () -> {
                         if (delivered == 0 && remaining == 0) {
                             p.sendMessage(Util.f("&7受け取れる報酬はありません。"));
@@ -38,7 +43,7 @@ public class RewardCommand implements CommandExecutor {
                             if (remaining > 0) p.sendMessage(Util.f("&e空き不足で {0} 件保留です。", remaining));
                         }
                     });
-                } catch (SQLException e) {
+                } catch (Exception e) {
                     Bukkit.getScheduler().runTask(Pointed.getInstance(), () ->
                             p.sendMessage(Util.f("&cエラー: {0}", e.getMessage())));
                 }
